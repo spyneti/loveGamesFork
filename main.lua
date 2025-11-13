@@ -1,11 +1,12 @@
 local score = 0
 
 function love.load()
-    love.graphics.setDefaultFilter("nearest", "nearest")
+    require "mainCharacter"
+    mainCharacter.load()   love.graphics.setDefaultFilter("nearest", "nearest")
 end
 
 function love.update(dt)
-    score = score + 1
+    mainCharacter.update(dt)    score = score + 1
 end
 
 function love.draw()
