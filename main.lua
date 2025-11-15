@@ -2,17 +2,22 @@ local score = 0
 
 function love.load()
     require "mainCharacter"
-    mainCharacter.load()   
+    require "enemyUnit"
+
+    mainCharacter.load()  
+    enemyUnit.load() 
     love.graphics.setDefaultFilter("nearest", "nearest")
 end
 
 function love.update(dt)
-    mainCharacter.update(dt)    
+    mainCharacter.update(dt) 
+    enemyUnit.update(dt)   
     score = score + 1
 end
 
 function love.draw()
     mainCharacter.draw()
+    enemyUnit.draw()
 
     time = math.floor(love.timer.getTime())
     standardPadding = 10
