@@ -2,14 +2,18 @@ local score = 0
 
 function love.load()
     require "mainCharacter"
-    mainCharacter.load()   love.graphics.setDefaultFilter("nearest", "nearest")
+    mainCharacter.load()   
+    love.graphics.setDefaultFilter("nearest", "nearest")
 end
 
 function love.update(dt)
-    mainCharacter.update(dt)    score = score + 1
+    mainCharacter.update(dt)    
+    score = score + 1
 end
 
 function love.draw()
+    mainCharacter.draw()
+
     time = math.floor(love.timer.getTime())
     standardPadding = 10
 
