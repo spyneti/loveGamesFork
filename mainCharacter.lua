@@ -1,6 +1,9 @@
 mainCharacter = {}
 
 function mainCharacter.load()
+    wf = require "libraries/windfield"
+    world = wf.newWorld(0, 0)
+
     camera = require "libraries/camera"
     cam = camera()
     cam:zoom(4)
@@ -12,6 +15,8 @@ function mainCharacter.load()
     gameMap = sti("maps/map.lua")
 
     player = {}
+    player.collider = world:newBSGRectangleCollider(400, 250, 12, 18, 4)
+    player.collider:setFixedRotation(true)
     player.x = 32
     player.y = 32
     player.speed = 150
@@ -30,7 +35,15 @@ function mainCharacter.load()
     player.animations.up = anim8.newAnimation( player.grid("1-4", 4), 0.2)
 
     player.anim = player.animations.left
- 
+
+    walls = {}
+    if gameMap.layers["walls"] then
+        for i, obj in pairs(gameMap.layers["walls"].objects) do
+            local wall = world:newRectangleCollider(obj.x, obj.y, obj.width, obj.height)
+            wall:setType("static")
+            table.insert(walls, wall)
+        end
+    end
 end
 
 function mainCharacter.update(dt)
@@ -67,8 +80,24 @@ function mainCharacter.update(dt)
         player.anim:gotoFrame(2)
     end
 
-    player.x = player.x + dx * currentSpeed * dt
-    player.y = player.y + dy * currentSpeed * dt
+    local vx =  dx * currentSpeed 
+    local vy =  dy * currentSpeed
+
+    player.collider:setLinearVelocity(vx, vy)
+
+    world:update(dt)
+    local halfW = 12 / 2
+    local halfH = 18 / 2
+    local mapW = 30 * 16
+    local mapH = 30 * 16
+
+    local x = math.max(halfW, math.min(player.collider:getX(), mapW - halfW))
+    local y = math.max(halfH, math.min(player.collider:getY(), mapH - halfH))
+    player.collider:setPosition(x, y)
+
+
+    player.x = player.collider:getX()
+    player.y = player.collider:getY()
 
     player.anim:update(dt)
 
@@ -87,6 +116,7 @@ function mainCharacter.update(dt)
 
     local mapW = 30 * 16 
     local mapH = 30 * 16
+    
 
     local camX = math.max(screenW/2, math.min(player.x, mapW - screenW/2))
     local camY = math.max(screenH/2, math.min(player.y, mapH - screenH/2))
