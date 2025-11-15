@@ -85,7 +85,6 @@ function mainCharacter.update(dt)
 
     player.collider:setLinearVelocity(vx, vy)
 
-    world:update(dt)
     local halfW = 12 / 2
     local halfH = 18 / 2
     local mapW = 30 * 16
@@ -105,7 +104,7 @@ function mainCharacter.update(dt)
         -- Count down the timer
         player.invincibleTimer = player.invincibleTimer - dt
         if player.invincibleTimer <= 0 then
-            player.invincible = false -- Time's up!
+            player.invincible = false 
         end
     end
 
@@ -142,7 +141,7 @@ function mainCharacter.draw()
         gameMap:drawLayer(gameMap.layers["trees"], 0, 0, 4, 4)
         love.graphics.setColor(1, 0, 0)
 
-        love.graphics.circle("fill", player.x, player.y, 3)
+        love.graphics.circle("fill", player.x, player.y, 1)
         
         love.graphics.setColor(1, 1, 1)
 

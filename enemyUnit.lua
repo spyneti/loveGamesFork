@@ -6,10 +6,15 @@ local enemySpriteSheet
 function enemyUnit.spawn(x, y)
     local e = {}
 
+    -- Collider setup (assuming 12x18 sprite size, like the player)
+    e.collider = world:newRectangleCollider(x, y, 3, 4)
+    e.collider:setFixedRotation(true)
+    e.collider:setMass(1) -- Give it mass so it can be moved
+
     e.x = x
     e.y = y
     e.speed = 100
-    e.dmg = 10
+    e.dmg = 50
     e.spriteSheet = enemySpriteSheet 
     e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())
 
@@ -51,27 +56,38 @@ function enemyUnit.update(dt)
     for i, e in ipairs(enemyUnit.enemies) do
         local dx, dy = getDirectionToPlayer(e)
 
-        -- determine animation
         if math.abs(dx) > math.abs(dy) then
             e.anim = dx > 0 and e.animations.right or e.animations.left
         else
             e.anim = dy > 0 and e.animations.down or e.animations.up
         end
 
-        e.x = e.x + dx * e.speed * dt
-        e.y = e.y + dy * e.speed * dt
+        local vx = dx * e.speed
+        local vy = dy * e.speed
+        
+        -- Set velocity on the collider
+        e.collider:setLinearVelocity(vx, vy)
+        
+        -- Update the sprite position from the collider position
+        e.x = e.collider:getX()
+        e.y = e.collider:getY()
 
         e.anim:update(dt)
     end
 end
 
 function enemyUnit.draw()
-
     for i, e in ipairs(enemyUnit.enemies) do
         e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1.33, 1.33, 6, 9)
 
-        -- Draw the debug circle for this enemy
-        love.graphics.circle("fill", e.x, e.y, 3)
+        love.graphics.setColor(0, 1, 0, 0.5) -- Semi-transparent green for hitbox
+        e.collider:draw('line')
+
+        -- Debug circle for the center
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.circle("fill", e.x, e.y, 1)
+
+        love.graphics.setColor(1, 1, 1)
     end
 
     love.graphics.setColor(1, 1, 1) -- Reset color
