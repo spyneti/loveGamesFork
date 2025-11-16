@@ -98,15 +98,20 @@ function spawnEnemiesAtRandomPositions()
     local screenW = love.graphics.getWidth() / 4
     local screenH = love.graphics.getHeight() / 4
 
+    local spawnPadding = 50
+
     for i = 1, numberOfEnemies do
-        while spawnX <= 50 or spawnX >= screenW - 50 do
+        while spawnX <= spawnPadding or spawnX >= screenW - spawnPadding do
             spawnX = love.math.random(0, love.graphics.getWidth())
         end
 
-        while spawnY <= 50 or spawnY >= screenH - 50 do
+        while spawnY <= spawnPadding or spawnY >= screenH - spawnPadding do
             spawnY = love.math.random(0, love.graphics.getHeight())
         end
 
-        enemyUnit.spawn(playerX + spawnX + love.math.random(1, 30), playerY + spawnY + love.math.random(1, 30))
+        spawnCordX = playerX + spawnX + love.math.random(1, 30)
+        spawnCordY = playerY + spawnY + love.math.random(1, 30)
+
+        enemyUnit.spawn(spawnCordX, spawnCordY)
     end
 end
