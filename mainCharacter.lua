@@ -104,7 +104,7 @@ function mainCharacter.update(dt)
         -- Count down the timer
         player.invincibleTimer = player.invincibleTimer - dt
         if player.invincibleTimer <= 0 then
-            player.invincible = false 
+            player.invincible = false
         end
     end
 

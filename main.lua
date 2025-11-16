@@ -1,4 +1,6 @@
-local score = 3000
+local score = 0
+local spawnInterval = 2
+local spawnTimer = 0 
 
 function love.load()
     require "mainCharacter"
@@ -7,7 +9,6 @@ function love.load()
     mainCharacter.load()  
     enemyUnit.load() 
 
-    spawnEnemyAtRandomPosition()
     love.graphics.setDefaultFilter("nearest", "nearest")
 end
 
@@ -18,6 +19,14 @@ function love.update(dt)
     score = score + 1
 
     checkCollisions()
+
+   
+    spawnTimer = spawnTimer + dt
+    
+    if spawnTimer >= spawnInterval then
+        spawnEnemiesAtRandomPositions()
+        spawnTimer = 0
+    end
 end
 
 function love.draw()
@@ -79,23 +88,25 @@ function checkCollisions()
     end
 end
 
-function spawnEnemyAtRandomPosition()
-    numberOfEnemies = math.floor(score / 1000) + love.math.random(1, 3)
-    spawnX = love.graphics.getWidth()
-    spawnY = love.graphics.getHeight()
+function spawnEnemiesAtRandomPositions()
+    local numberOfEnemies = math.floor(score / 1000) + love.math.random(1, 3)
+    local playerX = player.x
+    local playerY = player.y
+    local spawnX = love.graphics.getWidth()
+    local spawnY = love.graphics.getHeight()
 
-    screenW = love.graphics.getWidth() / 4
-    screenH = love.graphics.getHeight() / 4
-
-    while spawnX < 50 or spawnX > screenW - 50 do
-        spawnX = love.math.random(0, love.graphics.getWidth())
-    end
-
-    while spawnY < 50 or spawnY > screenH - 50 do
-        spawnY = love.math.random(0, love.graphics.getHeight())
-    end
+    local screenW = love.graphics.getWidth() / 4
+    local screenH = love.graphics.getHeight() / 4
 
     for i = 1, numberOfEnemies do
-        enemyUnit.spawn(spawnX, spawnY)
+        while spawnX <= 50 or spawnX >= screenW - 50 do
+            spawnX = love.math.random(0, love.graphics.getWidth())
+        end
+
+        while spawnY <= 50 or spawnY >= screenH - 50 do
+            spawnY = love.math.random(0, love.graphics.getHeight())
+        end
+
+        enemyUnit.spawn(playerX + spawnX + love.math.random(1, 30), playerY + spawnY + love.math.random(1, 30))
     end
 end
