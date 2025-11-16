@@ -43,7 +43,7 @@ function projectile.update(dt)
 
         p.x = p.x + p.dirX * p.speed * dt
         p.y = p.y + p.dirY * p.speed * dt
-
+        
         local travelDistance = math.sqrt((p.x - player.x)^2 + (p.y - player.y)^2)
         if travelDistance > 500 then
             table.remove(projectile.projectiles, i)
@@ -65,11 +65,14 @@ function projectile.update(dt)
             local distanceSquared = (dx * dx) + (dy * dy)
 
             if distanceSquared < collisionRadiusSumSquared then
+
+                
                 
                 e.health = e.health - p.dmg 
                 
                 if e.health <= 0 then
-                    score = score + 100
+                    xp = xp + e.xpGain
+                    checkLevelUp()
                     table.remove(enemyUnit.enemies, j)
                 end
                 

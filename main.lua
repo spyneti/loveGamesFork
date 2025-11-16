@@ -1,9 +1,15 @@
-score = 0
+time = 0
+playerLevel = 1
+xp = 0
+xpThreshold = 1000
+
 local spawnTimer = 0
 local spawnInterval = 2
 local cooldown = 0
-local time = 0
 local isDead = false
+
+levelupMenuOpen = false
+powerupChoice = nil
 
 function love.load()
     require "mainCharacter"
@@ -77,12 +83,6 @@ function love.update(dt)
         end
 
         time = time + dt
-    else
-        if currentMusic:isPlaying() then
-            currentMusic:pause()
-        end
-
-        
     end
     
 end
@@ -97,9 +97,9 @@ function love.draw()
 
     local font = love.graphics.getFont()
 
-    local scoreText = "SCORE: " .. score
-    
-    local scoreTextWidth = (font:getWidth(scoreText)) * 2
+    local xpText = "XP: " .. xp
+    local font = love.graphics.getFont()
+    local xpTextWidth = (font:getWidth(xpText)) * 2
 
     local timeText = "TIME: " .. math.floor(time) 
     local TimeTextWidth = (font:getWidth(timeText)) * 2
@@ -109,52 +109,77 @@ function love.draw()
     local healthTextX = (windowWidth - healthTextWidth) / 2
     local healthTextY = standardPadding
 
-    local scoreTextX = standardPadding
-    local scoreTextY = standardPadding
+    xpTextX = standardPadding
+    xpTextY = standardPadding
 
     local timeTextX = windowWidth - TimeTextWidth - standardPadding
     local timeTextY = standardPadding
 
-    love.graphics.print(scoreText, scoreTextX, scoreTextY, 0, 2 )
+    love.graphics.print(xpText, xpTextX, xpTextY, 0, 2 )
     love.graphics.print(timeText , timeTextX, timeTextY, 0, 2)
 
-    love.graphics.print(healthText , healthTextX, healthTextY, 0, 2)
+    local padding = 10
+    local baseX = padding
+    local baseY = love.graphics.getHeight() - 150
+    -- debug player health, damage, speed, shooting rate
+    love.graphics.print("health: " .. player.health, baseX, baseY, 0, 2)
+    love.graphics.print("damage: " .. player.dmg, baseX, baseY + 40, 0, 2)
+    love.graphics.print("speed: " .. player.speed, baseX, baseY + 80, 0, 2)
+    love.graphics.print("rate: " .. player.arrowCooldown * 100 .. "%",   baseX, baseY + 120, 0, 2)
+
+    
     
     if isPaused then
-        local restartText = "press R to restart or Q to quit"
-        local restartTextWidth = (font:getWidth(restartText)) * 2
+        if levelupMenuOpen then
+            love.graphics.setColor(0, 0, 0, 0.7)
+            love.graphics.rectangle("fill", 200, 150, 450, 300)
 
-        local restartTextX = (windowWidth - restartTextWidth) / 2
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.print("LEVEL UP! Choose a power-up:", 240, 180, 0, 2)
 
-        love.graphics.print(restartText, restartTextX , windowHeight / 2, 0, 2)
+            love.graphics.print("1) +40 Max Health", 240, 240, 0, 2)
+            love.graphics.print("2) +10 Damage", 240, 280, 0, 2)
+            love.graphics.print("3) +5 Speed", 240, 320, 0, 2)
+            love.graphics.print("4) +10% Attack Speed", 240, 360, 0, 2)
+            love.graphics.print("5) Heal to full HP", 240, 400, 0, 2)
+        else
+            local restartText = "press R to restart or Q to quit"
+            local restartTextWidth = (font:getWidth(restartText)) * 2
+
+            local restartTextX = (windowWidth - restartTextWidth) / 2
+
+            love.graphics.print(restartText, restartTextX , windowHeight / 2, 0, 2)
+        end
     end
+
+    love.graphics.setColor(1, 1, 1)
 end
 
 isPaused = false
 
 function love.keypressed(key)
-    if not isDead then
-        if key == "p" or key == "escape" then
-            isPaused = not isPaused
-        end 
+    if levelupMenuOpen then
+        if key == "1" then applyPowerup("health") isPaused = false end
+        if key == "2" then applyPowerup("damage") isPaused = false end
+        if key == "3" then applyPowerup("speed") isPaused = false end
+        if key == "4" then applyPowerup("shootingRate") isPaused = false end
+        if key == "5" then applyPowerup("heal") isPaused = false end
+        return
+    end
 
-        if isPaused then
-            if key == "r" then
-                restartGame()
-            end
-        end
+    -- Pause toggle
+    if key == "p" or key == "escape" then
+        isPaused = not isPaused
+    end
 
-        if key == "q" then 
-            love.window.close()
-        end
-    else
-        if key == "q" then 
-            love.window.close()
-        end
+    if isPaused then
+        if key == "r" then restartGame() end
+        if key == "q" then love.window.close() end
+    end
 
-        if key == "r" then
-            restartGame()
-        end
+    if isDead then
+        if key == "r" then restartGame() end
+        if key == "q" then love.window.close() end
     end
 end
 
@@ -162,12 +187,11 @@ function restartGame()
     mainCharacter.load() 
     enemyUnit.load() 
     projectile.projectiles = {}
-    score = 0
+    xp = 0
     time = 0
     spawnTimer = 0
     isPaused = false
 end
-
 
 function checkCollisions()
     local playerRadius = 6
@@ -204,7 +228,7 @@ function checkCollisions()
 end
 
 function spawnEnemiesAtRandomPositions()
-    local numberOfEnemies = math.floor(score / 200) + love.math.random(1, 2)
+    local numberOfEnemies = math.floor(time / 30) + love.math.random(1, 2)
     local playerX = player.x
     local playerY = player.y
     local spawnX = love.graphics.getWidth()
@@ -256,4 +280,31 @@ function mouseDown(button)
             cooldown = arrowCooldown
         end
     end
+end
+
+function checkLevelUp()
+    if xp >= xpThreshold then
+        xp = xp - xpThreshold 
+        playerLevel = playerLevel + 1
+        xpThreshold = math.floor(xpThreshold * 1.2)  
+        levelupMenuOpen = true
+        isPaused = true
+    end
+end
+
+function applyPowerup(choice)
+    if choice == "health" then
+        player.maxHealth = player.maxHealth + 40
+        player.health = playe.health + 40
+    elseif choice == "damage" then
+        player.dmg = player.dmg + 10
+    elseif choice == "speed" then
+        player.speed = player.speed + 5
+    elseif choice == "heal" then
+        player.health = player.maxHealth
+    elseif choice == "shootingRate" then
+        player.arrowCooldown = player.arrowCooldown - player.arrowCooldown / 10
+    end
+
+    levelupMenuOpen = false
 end

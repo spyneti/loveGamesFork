@@ -10,11 +10,14 @@ function enemyUnit.spawn(x, y)
     e.collider:setFixedRotation(true)
     e.collider:setMass(1)
 
+    timeBuff = time / 10
+
     e.x = x
     e.y = y
-    e.health = 50
-    e.speed = 130
-    e.dmg = 20
+    e.health = math.floor(love.math.random(10 + timeBuff, 100 + timeBuff))
+    e.speed = math.floor(love.math.random(100 + timeBuff, 150 + timeBuff))
+    e.dmg = math.floor(love.math.random(5 + timeBuff, 30 + timeBuff))
+    e.xpGain = math.floor(love.math.random(75 + timeBuff, 150 + timeBuff))
     e.spriteSheet = enemySpriteSheet 
     e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())
 
@@ -79,6 +82,7 @@ end
 
 function enemyUnit.draw()
     for i, e in ipairs(enemyUnit.enemies) do
+        love.graphics.setColor(0.7, 0, 0)
         e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1.33, 1.33, 6, 9)
 
         love.graphics.setColor(1, 1, 1)

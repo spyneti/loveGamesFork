@@ -24,12 +24,13 @@ function mainCharacter.load()
     player.y = 32
     player.speed = 150
     player.health = 100
+    player.maxHealth = 100
     player.dmg = 25
     player.projectileSpeed = 300
-    player.arrowCooldown = 0.2
+    player.arrowCooldown = 0.5
 
     player.invincible = false
-    player.iframeDuration = 0.5
+    player.iframeDuration = 0.2
     player.invincibleTimer = 0
     player.spriteSheet = love.graphics.newImage("sprites/player-sheet.png")
     player.grid = anim8.newGrid(12, 18, player.spriteSheet:getWidth(), player.spriteSheet:getHeight())
