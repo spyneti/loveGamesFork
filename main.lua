@@ -295,7 +295,7 @@ end
 function applyPowerup(choice)
     if choice == "health" then
         player.maxHealth = player.maxHealth + 40
-        player.health = playe.health + 40
+        player.health = player.health + 40
     elseif choice == "damage" then
         player.dmg = player.dmg + 10
     elseif choice == "speed" then
