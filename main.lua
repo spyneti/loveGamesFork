@@ -10,6 +10,35 @@ function love.load()
     enemyUnit.load() 
 
     love.graphics.setDefaultFilter("nearest", "nearest")
+
+    sounds = {}
+
+    sounds.musicList = {
+        love.audio.newSource("music/pixel field.mp3", "stream"),
+        love.audio.newSource("music/pixel grass.mp3", "stream"),
+        love.audio.newSource("music/pixel tree.mp3", "stream")
+    }
+
+    for _, s in pairs(sounds.musicList) do
+        s:setLooping(false)
+        s:setVolume(0.3)
+    end
+
+    currentMusic = sounds.musicList[love.math.random(1, #sounds.musicList)]
+    currentMusic:play()
+
+    sounds.deathSounds = {
+        love.audio.newSource("dying/dying-1.mp3", "static"),
+        love.audio.newSource("dying/dying-2.mp3", "static"),
+        love.audio.newSource("dying/dying-3.mp3", "static"),
+        love.audio.newSource("dying/dying-4.mp3", "static"),
+        love.audio.newSource("dying/dying-5.mp3", "static")
+    }
+
+    for _, deathSound in pairs(sounds.deathSounds) do
+        deathSound:setVolume(0.5)
+    end
+
 end
 
 function love.update(dt) 
@@ -26,6 +55,11 @@ function love.update(dt)
     if spawnTimer >= spawnInterval then
         spawnEnemiesAtRandomPositions()
         spawnTimer = 0
+    end
+
+    if not currentMusic:isPlaying() then
+        currentMusic = sounds.musicList[love.math.random(1, #sounds.musicList)]
+        currentMusic:play()
     end
 end
 
@@ -77,6 +111,10 @@ function checkCollisions()
                 
                 player.health = player.health - e.dmg
                 if player.health <= 0 then
+
+                    local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
+                    randomDeathSound:play()
+
                     player.collider:setPosition(32, 32)
                     player.health = 100
                 end

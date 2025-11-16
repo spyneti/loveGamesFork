@@ -7,7 +7,7 @@ function enemyUnit.spawn(x, y)
     local e = {}
 
     -- Collider setup (assuming 12x18 sprite size, like the player)
-    e.collider = world:newRectangleCollider(x, y, 6, 7)
+    e.collider = world:newRectangleCollider(x, y, 4, 4)
     e.collider:setFixedRotation(true)
     e.collider:setMass(1) -- Give it mass so it can be moved
 
