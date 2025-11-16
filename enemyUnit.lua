@@ -15,7 +15,7 @@ function enemyUnit.spawn(x, y)
     e.y = y
     e.health = 100
     e.speed = 70
-    e.dmg = 50
+    e.dmg = 20
     e.spriteSheet = enemySpriteSheet 
     e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())
 

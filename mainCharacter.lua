@@ -24,9 +24,10 @@ function mainCharacter.load()
     player.y = 32
     player.speed = 150
     player.health = 100
-    player.dmg = 25
+    player.maxHealth = 100
+    player.dmg = 50
     player.projectileSpeed = 300
-    player.arrowCooldown = 0.2
+    player.arrowCooldown = 0.5
 
     player.invincible = false
     player.iframeDuration = 0.5
