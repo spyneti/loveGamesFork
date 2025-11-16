@@ -174,12 +174,12 @@ function love.keypressed(key)
 
     if isPaused then
         if key == "r" then restartGame() end
-        if key == "q" then love.window.close() end
+        if key == "q" then love.window.close() love.audio.pause() end
     end
 
     if isDead then
         if key == "r" then restartGame() end
-        if key == "q" then love.window.close() end
+        if key == "q" then love.window.close() love.audio.pause() end
     end
 end
 
