@@ -14,6 +14,9 @@ function mainCharacter.load()
     sti = require "libraries/sti"
     gameMap = sti("maps/map.lua")
 
+    require "projectile"
+    projectile.load()
+
     player = {}
     player.collider = world:newBSGRectangleCollider(400, 250, 12, 18, 4)
     player.collider:setFixedRotation(true)
@@ -21,6 +24,9 @@ function mainCharacter.load()
     player.y = 32
     player.speed = 150
     player.health = 100
+    player.dmg = 25
+    player.projectileSpeed = 300
+    player.arrowCooldown = 0.5
 
     player.invincible = false
     player.iframeDuration = 0.5
@@ -47,6 +53,8 @@ function mainCharacter.load()
 end
 
 function mainCharacter.update(dt)
+    projectile.update(dt)
+
     local dx, dy = 0, 0
     local isMoving = false
 
@@ -122,7 +130,20 @@ function mainCharacter.update(dt)
 
     cam:lookAt(camX, camY)
 
+    mainCharacter.camX = camX
+    mainCharacter.camY = camY
+    mainCharacter.zoom = zoom
+
 end
+
+-- function love.mousepressed(x, y, button, istouch)
+--     leftMouseButton = 1
+
+--     if button == leftMouseButton then 
+
+--         projectile.spawn(x, y, player.projectileSpeed, player.dmg)
+--     end
+-- end
 
 function mainCharacter.draw()
     cam:attach()
@@ -137,6 +158,8 @@ function mainCharacter.draw()
         love.graphics.setColor(1, 1, 1)
 
         enemyUnit.draw()
+
+        projectile.draw()
 
         gameMap:drawLayer(gameMap.layers["trees"], 0, 0, 4, 4)
         love.graphics.setColor(1, 0, 0)

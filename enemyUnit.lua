@@ -7,13 +7,14 @@ function enemyUnit.spawn(x, y)
     local e = {}
 
     -- Collider setup (assuming 12x18 sprite size, like the player)
-    e.collider = world:newRectangleCollider(x, y, 6, 7)
+    e.collider = world:newRectangleCollider(x, y, 4, 4)
     e.collider:setFixedRotation(true)
     e.collider:setMass(1) -- Give it mass so it can be moved
 
     e.x = x
     e.y = y
-    e.speed = 100
+    e.health = 100
+    e.speed = 70
     e.dmg = 50
     e.spriteSheet = enemySpriteSheet 
     e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())

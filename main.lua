@@ -1,6 +1,7 @@
 local score = 0
 local spawnInterval = 2
 local spawnTimer = 0 
+local cooldown = 0
 
 function love.load()
     require "mainCharacter"
@@ -20,12 +21,15 @@ function love.update(dt)
 
     checkCollisions()
 
-   
     spawnTimer = spawnTimer + dt
     
     if spawnTimer >= spawnInterval then
         spawnEnemiesAtRandomPositions()
         spawnTimer = 0
+    end
+
+    if love.mouse.isDown(1) then
+        mouseDown(1)
     end
 end
 
@@ -65,7 +69,6 @@ function checkCollisions()
     local collisionRadiusSumSquared = (playerRadius + enemyRadius) * (playerRadius + enemyRadius)
 
     if player.invincible == false then
-        
         for i = #enemyUnit.enemies, 1, -1 do
             local e = enemyUnit.enemies[i] 
 
@@ -77,6 +80,7 @@ function checkCollisions()
                 
                 player.health = player.health - e.dmg
                 if player.health <= 0 then
+                    -- Reset player position and health
                     player.collider:setPosition(32, 32)
                     player.health = 100
                 end
@@ -117,5 +121,33 @@ function spawnEnemiesAtRandomPositions()
         spawnCordY = playerY + spawnY + love.math.random(1, 30)
 
         enemyUnit.spawn(spawnCordX, spawnCordY)
+    end
+end
+
+function mouseDown(button)
+    local leftMouseButton = 1
+
+    if button == leftMouseButton then 
+        local arrowCooldown = mainCharacter.arrowCooldown
+        
+
+        if cooldown >= 0 then
+            cooldown = cooldown - love.timer.getDelta()
+        else
+            local zoom = mainCharacter.zoom 
+            local camX = mainCharacter.camX
+            local camY = mainCharacter.camY
+            local x = love.mouse.getX()
+            local y = love.mouse.getY()
+            
+            local screenW = love.graphics.getWidth()
+            local screenH = love.graphics.getHeight()
+            
+            local worldX = (x - screenW / 2) / zoom + camX
+            local worldY = (y - screenH / 2) / zoom + camY
+            
+            projectile.spawn(worldX, worldY, player.projectileSpeed, player.dmg)
+            cooldown = arrowCooldown
+        end
     end
 end
