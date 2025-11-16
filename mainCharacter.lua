@@ -50,6 +50,22 @@ function mainCharacter.load()
             table.insert(walls, wall)
         end
     end
+
+    player.walkSounds = {
+        love.audio.newSource("walk/walk-grass-1 (sfx).mp3", "static"),
+        love.audio.newSource("walk/walk-grass-2 (sfx).mp3", "static"),
+        love.audio.newSource("walk/walk-grass-3 (sfx).mp3", "static"),
+        love.audio.newSource("walk/walk-grass-4 (sfx).mp3", "static"),
+        love.audio.newSource("walk/walk-grass-5 (sfx).mp3", "static"),
+        love.audio.newSource("walk/walk-grass-6 (sfx).mp3", "static")
+    }
+
+    for _, sound in ipairs(player.walkSounds) do
+        sound:setVolume(0.009)
+    end
+
+    player.stepTimer = 0
+    player.currentStep = 1
 end
 
 function mainCharacter.update(dt)
@@ -88,6 +104,31 @@ function mainCharacter.update(dt)
         player.anim:gotoFrame(2)
     end
 
+    if isMoving then
+        if not player.stepTimer then
+            player.stepTimer = 0
+            player.currentStep = 1
+        end
+        
+        player.stepTimer = player.stepTimer + dt
+
+        if player.stepTimer >= 0.3 then 
+            player.walkSounds[player.currentStep]:play()
+            
+            player.currentStep = player.currentStep + 1
+            if player.currentStep > #player.walkSounds then
+                player.currentStep = 1
+            end
+            
+            player.stepTimer = 0
+        end
+    else
+        if player.stepTimer then
+            player.stepTimer = 0
+            player.currentStep = 1
+        end
+    end
+
     local vx =  dx * currentSpeed 
     local vy =  dy * currentSpeed
 
@@ -95,8 +136,8 @@ function mainCharacter.update(dt)
 
     local halfW = 12 / 2
     local halfH = 18 / 2
-    local mapW = 30 * 16
-    local mapH = 30 * 16
+    local mapW = 90 * 16
+    local mapH = 90 * 16
 
     local x = math.max(halfW, math.min(player.collider:getX(), mapW - halfW))
     local y = math.max(halfH, math.min(player.collider:getY(), mapH - halfH))
@@ -120,11 +161,7 @@ function mainCharacter.update(dt)
 
     local screenW = love.graphics.getWidth() / zoom
     local screenH = love.graphics.getHeight() / zoom
-
-    local mapW = 30 * 16 
-    local mapH = 30 * 16
     
-
     local camX = math.max(screenW/2, math.min(player.x, mapW - screenW/2))
     local camY = math.max(screenH/2, math.min(player.y, mapH - screenH/2))
 
@@ -148,6 +185,7 @@ end
 function mainCharacter.draw()
     cam:attach()
         gameMap:drawLayer(gameMap.layers["ground"], 0, 0, 4, 4)
+        gameMap:drawLayer(gameMap.layers["flowers"], 0, 0, 4, 4)
 
         if player.invincible then
             love.graphics.setColor(1, 1, 1, 0.5)
