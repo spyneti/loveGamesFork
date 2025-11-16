@@ -21,6 +21,8 @@ function projectile.spawn(x, y, speed, dmg)
         p.dirX = 0
         p.dirY = 0
     end
+
+    p.rotation = math.atan2(p.dirY, p.dirX)
     
     p.speed = speed
     p.dmg = dmg
@@ -42,7 +44,11 @@ function projectile.update(dt)
         p.x = p.x + p.dirX * p.speed * dt
         p.y = p.y + p.dirY * p.speed * dt
 
-        -- Check despawn if needed (omitted for now)
+        local travelDistance = math.sqrt((p.x - player.x)^2 + (p.y - player.y)^2)
+        if travelDistance > 500 then
+            table.remove(projectile.projectiles, i)
+            break
+        end
 
         local projectileRadius = 3
         local enemyRadius = 6
@@ -63,6 +69,7 @@ function projectile.update(dt)
                 e.health = e.health - p.dmg 
                 
                 if e.health <= 0 then
+                    score = score + 100
                     table.remove(enemyUnit.enemies, j)
                 end
                 
@@ -80,7 +87,7 @@ end
 function projectile.draw()
     for i, p in ipairs(projectile.projectiles) do
 
-        love.graphics.draw(projectileImage, p.x, p.y, 0, 1, 1, 6, 9)
+        love.graphics.draw(projectileImage, p.x, p.y, p.rotation, 1, 1, 6, 9)
 
         -- Debug circle for the center
         -- love.graphics.setColor(0, 0, 1)

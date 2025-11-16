@@ -1,4 +1,4 @@
-local score = 0
+score = 0
 local spawnInterval = 2
 local spawnTimer = 0 
 local cooldown = 0
@@ -46,7 +46,6 @@ function love.update(dt)
     mainCharacter.update(dt) 
     enemyUnit.update(dt)
     world:update(dt) 
-    score = score + 1
 
     checkCollisions()
 
@@ -60,6 +59,14 @@ function love.update(dt)
     if not currentMusic:isPlaying() then
         currentMusic = sounds.musicList[love.math.random(1, #sounds.musicList)]
         currentMusic:play()
+    end
+
+    if type(cooldown) ~= "number" then
+        cooldown = 0
+    end
+
+    if cooldown > 0 then
+        cooldown = cooldown - dt
     end
 
     if love.mouse.isDown(1) then
@@ -166,12 +173,10 @@ function mouseDown(button)
     local leftMouseButton = 1
 
     if button == leftMouseButton then 
-        local arrowCooldown = mainCharacter.arrowCooldown
+        local arrowCooldown = player.arrowCooldown
         
 
-        if cooldown >= 0 then
-            cooldown = cooldown - love.timer.getDelta()
-        else
+        if cooldown <= 0 then
             local zoom = mainCharacter.zoom 
             local camX = mainCharacter.camX
             local camY = mainCharacter.camY
