@@ -11,6 +11,10 @@ local isDead = false
 levelupMenuOpen = false
 powerupChoice = nil
 
+local buttons = {}
+local hoverSound = love.audio.newSource("menu/menu sound effect-sfx.mp3", "static")
+local clickSound = love.audio.newSource("menu/menu sellect sfx.mp3", "static")
+
 function love.load()
     love.window.maximize()
     require "mainCharacter"
@@ -123,7 +127,7 @@ function love.draw()
     local padding = 10
     local baseX = padding
     local baseY = love.graphics.getHeight() - 150
-    -- debug player health, damage, speed, shooting rate
+
     love.graphics.print("health: " .. player.health, baseX, baseY, 0, 2)
     love.graphics.print("damage: " .. player.dmg, baseX, baseY + 40, 0, 2)
     love.graphics.print("speed: " .. player.speed, baseX, baseY + 80, 0, 2)
@@ -132,25 +136,58 @@ function love.draw()
     
     
     if isPaused then
+        local windowWidth = love.graphics.getWidth()
+        local windowHeight = love.graphics.getHeight()
+
+
         if levelupMenuOpen then
+            local menuWidth = 450
+            local menuHeight = 350
+            local menuX = (windowWidth - menuWidth) / 2
+            local menuY = (windowHeight - menuHeight) / 2
+            
             love.graphics.setColor(0, 0, 0, 0.7)
-            love.graphics.rectangle("fill", 200, 150, 450, 300)
+            love.graphics.rectangle("fill", menuX, menuY, menuWidth, menuHeight)
 
+            local titleText = "LEVEL UP! Choose a power-up:"
+            local titleWidth = font:getWidth(titleText) * 2
             love.graphics.setColor(1, 1, 1)
-            love.graphics.print("LEVEL UP! Choose a power-up:", 240, 180, 0, 2)
+            love.graphics.print(titleText, menuX + (menuWidth - titleWidth)/2, menuY + 30, 0, 2)
 
-            love.graphics.print("1) +40 Max Health", 240, 240, 0, 2)
-            love.graphics.print("2) +10 Damage", 240, 280, 0, 2)
-            love.graphics.print("3) +5 Speed", 240, 320, 0, 2)
-            love.graphics.print("4) +10% Attack Speed", 240, 360, 0, 2)
-            love.graphics.print("5) Heal to full HP", 240, 400, 0, 2)
+            local buttonX = menuX + 40
+            local buttonY = menuY + 90
+            local buttonWidth = menuWidth - 80
+            local buttonHeight = 40
+
+            drawButton("+40 Max Health", buttonX, buttonY, buttonWidth, buttonHeight, 
+                      powerupChoice == "health")
+
+            drawButton("+10 Damage", buttonX, buttonY + 50, buttonWidth, buttonHeight,
+                      powerupChoice == "damage")
+
+            drawButton("+5 Speed", buttonX, buttonY + 100, buttonWidth, buttonHeight,
+                      powerupChoice == "speed")
+
+            drawButton("+10% Attack Speed", buttonX, buttonY + 150, buttonWidth, buttonHeight,
+                      powerupChoice == "shootingRate")
+
+            drawButton("Heal to full HP", buttonX, buttonY + 200, buttonWidth, buttonHeight,
+                      powerupChoice == "heal")
+            
         else
-            local restartText = "press R to restart or Q to quit"
-            local restartTextWidth = (font:getWidth(restartText)) * 2
+            local menuWidth = 400
+            local menuHeight = 200
+            local menuX = (windowWidth - menuWidth) / 2
+            local menuY = (windowHeight - menuHeight) / 2
+                
+            love.graphics.setColor(0, 0, 0, 0.7)
+            love.graphics.rectangle("fill", menuX, menuY, menuWidth, menuHeight)
 
-            local restartTextX = (windowWidth - restartTextWidth) / 2
-
-            love.graphics.print(restartText, restartTextX , windowHeight / 2, 0, 2)
+            local buttonWidth = 300
+            local buttonX = menuX + (menuWidth - buttonWidth) / 2
+                
+            drawButton("RESTART", buttonX, menuY + 40, buttonWidth, 50, powerupChoice == "restart")
+            drawButton("QUIT", buttonX, menuY + 120, buttonWidth, 50, powerupChoice == "quit")
         end
     end
 
@@ -169,7 +206,6 @@ function love.keypressed(key)
         return
     end
 
-    -- Pause toggle
     if not isDead then
         if key == "p" or key == "escape" then
          isPaused = not isPaused
@@ -177,13 +213,13 @@ function love.keypressed(key)
 
         if isPaused then
             if key == "r" then restartGame() end
-            if key == "q" then love.window.close() love.audio.pause() end
+            if key == "q" then love.event.quit() end
         end
     end
    
     if isDead then
         if key == "r" then restartGame() end
-        if key == "q" then love.window.close() love.audio.pause() end
+        if key == "q" then love.event.quit() end
     end
 end
 
@@ -311,4 +347,110 @@ function applyPowerup(choice)
     end
 
     levelupMenuOpen = false
+end
+
+function drawButton(text, x, y, width, height, isHovered)
+    if isHovered then
+        love.graphics.setColor(0.3, 0.3, 0.8, 0.9)
+    else
+        love.graphics.setColor(0.2, 0.2, 0.6, 0.8)
+    end
+    love.graphics.rectangle("fill", x, y, width, height, 5)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.rectangle("line", x, y, width, height, 5)
+
+    local font = love.graphics.getFont()
+    local textWidth = font:getWidth(text) * 2
+    local textHeight = font:getHeight() * 2
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print(text, x + (width - textWidth)/2, y + (height - textHeight)/2, 0, 2)
+end
+
+local lastChoice = nil
+
+function love.mousemoved(x, y, dx, dy)
+    local windowWidth = love.graphics.getWidth()
+    local windowHeight = love.graphics.getHeight()
+    
+    local currentChoice = nil
+
+    if levelupMenuOpen then
+        local menuWidth = 450
+        local menuHeight = 350
+        local menuX = (windowWidth - menuWidth) / 2
+        local menuY = (windowHeight - menuHeight) / 2
+        
+        local buttonX = menuX + 40
+        local buttonY = menuY + 90 
+        local buttonWidth = menuWidth - 80 
+        local buttonHeight = 40
+        
+        currentChoice = nil
+        
+        if x >= buttonX and x <= buttonX + buttonWidth then
+            if y >= buttonY and y <= buttonY + 40 then
+                currentChoice = "health"
+            elseif y >= buttonY + 50 and y <= buttonY + 90 then
+                currentChoice = "damage"
+            elseif y >= buttonY + 100 and y <= buttonY + 140 then
+                currentChoice = "speed"
+            elseif y >= buttonY + 150 and y <= buttonY + 190 then
+                currentChoice = "shootingRate"
+            elseif y >= buttonY + 200 and y <= buttonY + 240 then
+                currentChoice = "heal"
+            end
+        end
+    elseif isPaused and not levelupMenuOpen then
+        local menuWidth = 400
+        local menuHeight = 200
+        local menuX = (windowWidth - menuWidth) / 2
+        local menuY = (windowHeight - menuHeight) / 2
+        
+        local buttonWidth = 300
+        local buttonX = menuX + (menuWidth - buttonWidth) / 2
+        
+        currentChoice = nil
+        if x >= buttonX and x <= buttonX + buttonWidth then
+            if y >= menuY + 40 and y <= menuY + 90 then  
+                currentChoice = "restart"
+            elseif y >= menuY + 120 and y <= menuY + 170 then 
+                currentChoice = "quit"
+            end
+        end
+    end
+
+     if currentChoice and currentChoice ~= lastChoice then
+        hoverSound:stop()
+        hoverSound:play() 
+    end
+    
+    powerupChoice = currentChoice
+    lastChoice = currentChoice 
+end
+
+function love.mousepressed(x, y, button)
+    if button == 1 then 
+        if levelupMenuOpen then
+            if powerupChoice then
+                clickSound:stop()  
+                clickSound:play()   
+                applyPowerup(powerupChoice)
+                levelupMenuOpen = false
+                isPaused = false
+                powerupChoice = nil
+                lastChoice = nil  
+            end
+        elseif isPaused and not levelupMenuOpen then
+            if powerupChoice == "restart" then
+                clickSound:stop()
+                clickSound:play()
+                restartGame()
+            elseif powerupChoice == "quit" then
+                clickSound:stop()
+                clickSound:play()
+                love.event.quit()
+            end
+        end
+    end
 end
