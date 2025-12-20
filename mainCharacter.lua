@@ -226,6 +226,8 @@ function mainCharacter.draw()
 
         love.graphics.setColor(1, 1, 1)
 
+        crate.draw()
+        
         enemyUnit.draw()
 
         particles.draw()

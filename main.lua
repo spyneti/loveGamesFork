@@ -4,25 +4,30 @@ xp = 0
 xpThreshold = 1000
 
 local spawnTimer = 0
-local spawnInterval = 2
+local enemySpawnInterval = 2
 local cooldown = 0
 local isDead = false
 
 levelupMenuOpen = false
 powerupChoice = nil
 
-local buttons = {}
-local hoverSound = love.audio.newSource("menu/menu sound effect-sfx.mp3", "static")
-local clickSound = love.audio.newSource("menu/menu sellect sfx.mp3", "static")
-
 function love.load()
     love.window.maximize()
     require "mainCharacter"
     require "enemyUnit"
     require "particles"
+    crate = require "crate"
 
     mainCharacter.load()  
     enemyUnit.load() 
+    crate.load()
+
+    buttons = {}
+    hoverSound = love.audio.newSource("menu/menu sound effect-sfx.mp3", "static")
+    clickSound = love.audio.newSource("menu/menu sellect sfx.mp3", "static")
+
+    hoverSound:setVolume(0.05) 
+    clickSound:setVolume(0.05)
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -39,8 +44,8 @@ function love.load()
         s:setVolume(0.05)
     end
 
-    currentMusic = sounds.musicList[love.math.random(1, #sounds.musicList)]
-    currentMusic:play()
+        currentMusic = sounds.musicList[love.math.random(1, #sounds.musicList)]
+        currentMusic:play()
 
     sounds.deathSounds = {
         love.audio.newSource("dying/dying-1.mp3", "static"),
@@ -60,13 +65,15 @@ function love.update(dt)
     if not isPaused then
         mainCharacter.update(dt) 
         enemyUnit.update(dt)
+        crate.update(dt)
         world:update(dt) 
 
         checkCollisions()
+        crate.checkPlayerCollision()
 
         spawnTimer = spawnTimer + dt
         
-        if spawnTimer >= spawnInterval then
+        if spawnTimer >= enemySpawnInterval then
             spawnEnemiesAtRandomPositions()
             spawnTimer = 0
         end
@@ -95,6 +102,8 @@ end
 
 function love.draw()
     mainCharacter.draw()
+    crate.drawTextEffects()
+    crate.drawBonusTimers()
 
     local standardPadding = 10
 
@@ -141,7 +150,7 @@ function love.draw()
 
         if levelupMenuOpen then
             local menuWidth = 450
-            local menuHeight = 350
+            local menuHeight = 400
             local menuX = (windowWidth - menuWidth) / 2
             local menuY = (windowHeight - menuHeight) / 2
             
@@ -172,6 +181,9 @@ function love.draw()
 
             drawButton("Heal to full HP", buttonX, buttonY + 200, buttonWidth, buttonHeight,
                       powerupChoice == "heal")
+
+            drawButton("+1 Piercing", buttonX, buttonY + 250, buttonWidth, buttonHeight,
+                      powerupChoice == "piercing")
             
         else
             local menuWidth = 400
@@ -202,6 +214,7 @@ function love.keypressed(key)
         if key == "3" then applyPowerup("speed") isPaused = false end
         if key == "4" then applyPowerup("shootingRate") isPaused = false end
         if key == "5" then applyPowerup("heal") isPaused = false end
+        if key == "6" then applyPowerup("piercing") isPaused = false end
         return
     end
 
@@ -225,6 +238,7 @@ end
 function restartGame()
     mainCharacter.load() 
     enemyUnit.load() 
+    crate.load()
     projectile.projectiles = {}
     xp = 0
     time = 0
@@ -343,6 +357,8 @@ function applyPowerup(choice)
         player.health = player.maxHealth
     elseif choice == "shootingRate" then
         player.arrowCooldown = player.arrowCooldown - player.arrowCooldown / 10
+    elseif choice == "piercing" then
+        player.pierce = player.pierce + 1
     end
 
     levelupMenuOpen = false
@@ -376,7 +392,7 @@ function love.mousemoved(x, y, dx, dy)
 
     if levelupMenuOpen then
         local menuWidth = 450
-        local menuHeight = 350
+        local menuHeight = 400
         local menuX = (windowWidth - menuWidth) / 2
         local menuY = (windowHeight - menuHeight) / 2
         
@@ -398,6 +414,8 @@ function love.mousemoved(x, y, dx, dy)
                 currentChoice = "shootingRate"
             elseif y >= buttonY + 200 and y <= buttonY + 240 then
                 currentChoice = "heal"
+            elseif y >= buttonY + 250 and y <= buttonY + 290 then
+                currentChoice = "piercing"
             end
         end
     elseif isPaused and not levelupMenuOpen then
