@@ -3,8 +3,17 @@ enemyUnit.enemies = {} -- A list to hold all enemies
 
 local enemySpriteSheet
 
+local bossTime = 0
+
 function enemyUnit.spawn(x, y)
     local e = {}
+
+    local spawningBoss = false
+
+    if bossTime >= 10 then 
+        spawningBoss = true
+        bossTime = 0
+    end
 
     e.collider = world:newRectangleCollider(x, y, 6,7)
     e.collider:setFixedRotation(true)
@@ -14,13 +23,29 @@ function enemyUnit.spawn(x, y)
 
     e.x = x
     e.y = y
-    e.health = math.floor(love.math.random(60 + timeBuff, 100 + timeBuff))
-    e.speed = 100 + timeBuff
-    e.dmg = math.floor(love.math.random(20 + timeBuff, 30 + timeBuff))
-    e.xpGain = math.floor(love.math.random(75 + timeBuff, 150 + timeBuff))
-    e.spriteSheet = enemySpriteSheet 
-    e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())
 
+    local startingHealth = 20
+    local startingSpeed = 100
+    local startingDamage = 20
+    local startingXp = 100
+    
+    if not spawningBoss then
+        e.health = startingHealth + timeBuff
+        e.speed = startingSpeed + timeBuff
+        e.dmg = startingDamage + timeBuff
+        e.xpGain = startingXp + (timeBuff * 2)
+        e.spriteSheet = enemySpriteSheet 
+        e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())
+        e.isBoss = false
+    else 
+        e.health = (startingHealth + timeBuff) * 5
+        e.speed = (startingSpeed + timeBuff) * 0.5
+        e.dmg = (startingDamage + timeBuff) * 5
+        e.xpGain = (startingXp + (timeBuff * 2)) * 10
+        e.spriteSheet = enemySpriteSheet 
+        e.grid = anim8.newGrid(12, 18, e.spriteSheet:getWidth(), e.spriteSheet:getHeight())
+        e.isBoss = true
+    end
     e.animations = {
         down  = anim8.newAnimation(e.grid("1-4", 1), 0.2),
         left  = anim8.newAnimation(e.grid("1-4", 2), 0.2),
@@ -39,11 +64,10 @@ function enemyUnit.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     enemySpriteSheet = love.graphics.newImage("sprites/player-sheet.png")
-
+    time = 0
 end
 
 local function getDirectionToPlayer(enemy)
-    -- We assume 'player' is available
     local dx = player.x - enemy.x
     local dy = player.y - enemy.y
 
@@ -57,6 +81,8 @@ local function getDirectionToPlayer(enemy)
 end
 
 function enemyUnit.update(dt)
+    bossTime = bossTime + dt
+
     for i, e in ipairs(enemyUnit.enemies) do
         local dx, dy = getDirectionToPlayer(e)
 
@@ -83,8 +109,11 @@ end
 function enemyUnit.draw()
     for i, e in ipairs(enemyUnit.enemies) do
         love.graphics.setColor(0.7, 0, 0)
-        e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1.33, 1.33, 6, 9)
-
+        if e.isBoss then 
+            e.anim:draw(e.spriteSheet, e.x, e.y, 0, 2, 2, 6, 9)
+        else 
+            e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1.33, 1.33, 6, 9)
+        end
         love.graphics.setColor(1, 1, 1)
     end
 

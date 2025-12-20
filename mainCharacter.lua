@@ -28,21 +28,35 @@ function mainCharacter.load()
     player.dmg = 25
     player.projectileSpeed = 300
     player.arrowCooldown = 0.5
-    player.pierce = 5
+    player.pierce = 1
 
     player.invincible = false
     player.iframeDuration = 0.2
     player.invincibleTimer = 0
-    player.spriteSheet = love.graphics.newImage("sprites/player-sheet.png")
-    player.grid = anim8.newGrid(12, 18, player.spriteSheet:getWidth(), player.spriteSheet:getHeight())
 
+
+    player.idleSpriteSheet = love.graphics.newImage("sprites/Archer_Idle.png")
+    player.runSpriteSheet = love.graphics.newImage("sprites/Archer_Run.png")
+
+    player.idleGrid = anim8.newGrid(192, 192, player.idleSpriteSheet:getWidth(), player.idleSpriteSheet:getHeight())
+    player.runGrid = anim8.newGrid(192, 192, player.runSpriteSheet:getWidth(), player.runSpriteSheet:getHeight())
+    
     player.animations = {}
-    player.animations.down = anim8.newAnimation( player.grid("1-4", 1), 0.2)
-    player.animations.left = anim8.newAnimation( player.grid("1-4", 2), 0.2)
-    player.animations.right = anim8.newAnimation( player.grid("1-4", 3), 0.2)
-    player.animations.up = anim8.newAnimation( player.grid("1-4", 4), 0.2)
 
-    player.anim = player.animations.left
+    -- player.animations.down = anim8.newAnimation( player.grid("1-4", 1), 0.2)
+    player.animations.rightRun = anim8.newAnimation( player.runGrid("1-4", 1), 0.1)
+    player.animations.leftRun = anim8.newAnimation( player.runGrid("1-4", 1), 0.1):flipH()
+    
+    player.animations.rightIdle = anim8.newAnimation( player.idleGrid("1-6", 1), 0.1)
+    player.animations.leftIdle = anim8.newAnimation( player.idleGrid("1-6", 1), 0.1):flipH()
+
+    -- player.animations.up = anim8.newAnimation( player.grid("1-4", 4), 0.2)
+
+    player.facing = "right"
+
+    player.anim = player.animations.rightIdle
+
+    player.currentSprite = player.idleSpriteSheet
 
     walls = {}
     if gameMap.layers["walls"] then
@@ -78,23 +92,39 @@ function mainCharacter.update(dt)
 
     if love.keyboard.isDown("a") then
         dx = dx - 1
-        player.anim = player.animations.left
+        player.anim = player.animations.leftRun
+        player.facing = "left"
+        player.currentSprite = player.runSpriteSheet
         isMoving = true
     end
     if love.keyboard.isDown("d") then
         dx = dx + 1
-        player.anim = player.animations.right
+        player.anim = player.animations.rightRun
+        player.facing = "right"
+        player.currentSprite = player.runSpriteSheet
         isMoving = true
     end
     if love.keyboard.isDown("w") then
         dy = dy - 1
-        player.anim = player.animations.up
         isMoving = true
+        player.currentSprite = player.runSpriteSheet
+
+        if player.facing == "left" then
+            player.anim = player.animations.leftRun
+        else
+            player.anim = player.animations.rightRun
+        end
     end
     if love.keyboard.isDown("s") then
         dy = dy + 1
-        player.anim = player.animations.down
         isMoving = true
+        player.currentSprite = player.runSpriteSheet
+
+        if player.facing == "left" then
+            player.anim = player.animations.leftRun
+        else
+            player.anim = player.animations.rightRun
+        end
     end
 
     local currentSpeed = player.speed
@@ -103,7 +133,12 @@ function mainCharacter.update(dt)
     end
 
     if isMoving == false then
-        player.anim:gotoFrame(2)
+        if player.facing == "left" then
+            player.anim = player.animations.leftIdle
+        else
+            player.anim = player.animations.rightIdle
+        end
+        player.currentSprite = player.idleSpriteSheet
     end
 
     if isMoving then
@@ -185,7 +220,9 @@ function mainCharacter.draw()
             love.graphics.setColor(1, 1, 1, 0.5)
         end
 
-        player.anim:draw(player.spriteSheet, player.x, player.y, 0, 1.33, 1.33, 6, 9)
+        local ox = 96
+        local oy = 96
+        player.anim:draw(player.currentSprite, player.x, player.y, 0, 0.3, 0.3, ox, oy)
 
         love.graphics.setColor(1, 1, 1)
 
