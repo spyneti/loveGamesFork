@@ -54,12 +54,17 @@ function projectile.update(dt)
         end
 
         local projectileRadius = 3
-        local enemyRadius = 6
-        local collisionRadiusSumSquared = (projectileRadius + enemyRadius) * (projectileRadius + enemyRadius)
+        local enemyRadius = 9
 
         -- Loop through enemies
         for j = #enemyUnit.enemies, 1, -1 do
             local e = enemyUnit.enemies[j] 
+
+            if e.isBoss then 
+                local enemyRadius = 15
+            end
+            
+            local collisionRadiusSumSquared = (projectileRadius + enemyRadius) * (projectileRadius + enemyRadius)
             
             -- Only check collision if we haven't hit this specific enemy yet
             if not p.hitList[e] then
@@ -86,7 +91,7 @@ function projectile.update(dt)
                         table.remove(enemyUnit.enemies, j)
                     end
                     
-                    -- ff the projectile ran out of pierce power, break the enemy loop
+                    -- if the projectile ran out of pierce power, break the enemy loop
                     if p.pierce <= 0 then
                         break 
                     end
@@ -104,7 +109,7 @@ end
 
 function projectile.draw()
     for i, p in ipairs(projectile.projectiles) do
-        love.graphics.draw(projectileImage, p.x, p.y, p.rotation, 1, 1, 6, 9)
+        love.graphics.draw(projectileImage, p.x, p.y, p.rotation, 0.3, 0.3, 6, 9)
     end
     love.graphics.setColor(1, 1, 1)
 end

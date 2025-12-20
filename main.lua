@@ -41,7 +41,7 @@ function love.load()
 
     for _, s in pairs(sounds.musicList) do
         s:setLooping(false)
-        s:setVolume(0.3)
+        s:setVolume(0.05)
     end
 
         currentMusic = sounds.musicList[love.math.random(1, #sounds.musicList)]
@@ -112,14 +112,14 @@ function love.draw()
 
     local font = love.graphics.getFont()
 
-    local xpText = "XP: " .. xp
+    local xpText = "XP: " .. math.floor(xp)
     local font = love.graphics.getFont()
     local xpTextWidth = (font:getWidth(xpText)) * 2
 
     local timeText = "TIME: " .. math.floor(time) 
     local TimeTextWidth = (font:getWidth(timeText)) * 2
 
-    local healthText = "health: " .. player.health
+    local healthText = "health: " .. math.floor(player.health)
     local healthTextWidth = (font:getWidth(healthText)) * 2
     local healthTextX = (windowWidth - healthTextWidth) / 2
     local healthTextY = standardPadding
@@ -137,12 +137,11 @@ function love.draw()
     local baseX = padding
     local baseY = love.graphics.getHeight() - 150
 
-    love.graphics.print("health: " .. player.health, baseX, baseY, 0, 2)
+    love.graphics.print("health: " .. healthText, baseX, baseY, 0, 2)
     love.graphics.print("damage: " .. player.dmg, baseX, baseY + 40, 0, 2)
     love.graphics.print("speed: " .. player.speed, baseX, baseY + 80, 0, 2)
     love.graphics.print("rate: " .. player.arrowCooldown * 100 .. "%",   baseX, baseY + 120, 0, 2)
 
-    
     
     if isPaused then
         local windowWidth = love.graphics.getWidth()
