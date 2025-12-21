@@ -6,7 +6,7 @@ bestTime = 0
 newRecord = false
 
 local spawnTimer = 0
-local enemySpawnInterval = 2
+local enemySpawnInterval = 1
 local cooldown = 0
 local isDead = false
 
@@ -38,6 +38,25 @@ function love.load()
     enemyUnit.load() 
     crate.load()
     
+
+    local cursorData = love.image.newImageData("sprites/cursor.png")
+
+    local customCursor = love.mouse.newCursor(cursorData, 0, 0)
+
+    love.mouse.setCursor(customCursor)
+
+    healthBarFrame = love.graphics.newImage("sprites/HealthBar-Base.png")
+    healthBarFill = love.graphics.newImage("sprites/HealthBar-Fill.png")
+    xpBarFill = love.graphics.newImage("sprites/XPBar-Fill.png")
+
+    barOffset = { x = 6, y = 6 }
+
+    barMaxWidth = healthBarFill:getWidth()
+    barHeight = healthBarFill:getHeight()
+
+    healthQuad = love.graphics.newQuad(0, 0, barMaxWidth, barHeight, healthBarFill:getWidth(), healthBarFill:getHeight())
+
+    xpQuad = love.graphics.newQuad(0, 0, barMaxWidth, barHeight, healthBarFill:getWidth(), healthBarFill:getHeight())
 
     buttons = {}
     hoverSound = love.audio.newSource("menu/menu sound effect-sfx.mp3", "static")
@@ -149,12 +168,39 @@ function love.draw()
     local baseX = padding
     local baseY = love.graphics.getHeight() - 150
 
-    love.graphics.print("health: " .. math.floor(player.health), baseX, baseY, 0, 2)
+    local healthPct = math.max(0, player.health / player.maxHealth)
+
+    local xpPct = math.max(0, xp / xpThreshold)
+
+    healthQuad:setViewport(0, 0, barMaxWidth * healthPct, barHeight)
+
+    xpQuad:setViewport(0, 0, barMaxWidth * xpPct, barHeight)
+
+
+    --health bar
+
+    love.graphics.draw(healthBarFrame, -35, xpTextY)
+
+    love.graphics.draw(healthBarFill, healthQuad, baseX + barOffset.x, xpTextY + 20)
+
+    love.graphics.print(math.floor(player.health) .. "/" .. player.maxHealth, baseX + barOffset.x, xpTextY + 24)
+
+    --xp bar
+
+    love.graphics.draw(healthBarFrame, -35, xpTextY + barHeight + padding * 3)
+
+    love.graphics.draw(xpBarFill, xpQuad, xpTextX + barOffset.x, xpTextY + barHeight + padding * 3 + 20)
+
+    love.graphics.print(math.floor(xp) .. "/" .. xpThreshold, baseX + barOffset.x, xpTextY + barHeight + padding * 3 + 24)
+
     love.graphics.print("damage: " .. player.dmg, baseX, baseY + 40, 0, 2)
     love.graphics.print("speed: " .. player.speed, baseX, baseY + 80, 0, 2)
-    love.graphics.print("rate: " .. player.arrowCooldown * 100 .. "%", baseX, baseY + 120, 0, 2)
-    
+    love.graphics.print("attack speed: " .. player.arrowCooldown,   baseX, baseY + 120, 0, 2)
+
     if isPaused then
+        local windowWidth = love.graphics.getWidth()
+        local windowHeight = love.graphics.getHeight()
+
         if levelupMenuOpen then
             -- LEVEL UP MENU
             local menuWidth = 450
@@ -315,6 +361,7 @@ function checkCollisions()
                         newRecord = false
                     end
                 end
+                checkDeath()
                 
                 player.invincible = true
                 player.invincibleTimer = player.iframeDuration
@@ -359,6 +406,14 @@ function isPositionOnWater(x, y)
     end
     
     return false  -- Not on water
+function checkDeath()
+    if player.health <= 0 then
+        local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
+        randomDeathSound:play()
+
+        isDead = true
+        isPaused = true
+    end
 end
 
 function spawnEnemiesAtRandomPositions()
