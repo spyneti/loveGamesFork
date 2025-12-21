@@ -96,7 +96,7 @@ function crate.spawnRandomcrate()
 end
 
 function crate.draw()
-    local scale = 0.25 
+    local scale = 0.3 
     for i, c in ipairs(crate.crates) do
         if not c.collected then
             if crate.spriteSheet and crate.crateQuad then

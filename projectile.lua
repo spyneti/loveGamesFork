@@ -61,7 +61,7 @@ function projectile.update(dt)
             local e = enemyUnit.enemies[j] 
 
             if e.isBoss then 
-                local enemyRadius = 15
+                local enemyRadius = 30
             end
             
             local collisionRadiusSumSquared = (projectileRadius + enemyRadius) * (projectileRadius + enemyRadius)
