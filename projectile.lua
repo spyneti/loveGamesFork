@@ -53,18 +53,23 @@ function projectile.update(dt)
             goto continue 
         end
 
-        local projectileRadius = 3
-        local enemyRadius = 9
+        local projectileRadius = 4
+        local normalEnemyRadius = 32  -- Half of 64
+        local bossEnemyRadius = 60    -- Boss is bigger (scaled 1.5x)
 
         -- Loop through enemies
         for j = #enemyUnit.enemies, 1, -1 do
             local e = enemyUnit.enemies[j] 
-
+            
+            -- Set enemy radius based on type
+            local currentEnemyRadius
             if e.isBoss then 
-                local enemyRadius = 30
+                currentEnemyRadius = bossEnemyRadius
+            else
+                currentEnemyRadius = normalEnemyRadius
             end
             
-            local collisionRadiusSumSquared = (projectileRadius + enemyRadius) * (projectileRadius + enemyRadius)
+            local collisionRadiusSumSquared = (projectileRadius + currentEnemyRadius) * (projectileRadius + currentEnemyRadius)
             
             -- Only check collision if we haven't hit this specific enemy yet
             if not p.hitList[e] then
@@ -73,9 +78,7 @@ function projectile.update(dt)
                 local dy = p.y - e.y
                 local distanceSquared = (dx * dx) + (dy * dy)
 
-                if distanceSquared < collisionRadiusSumSquared then
-                    
-                    -- mark as hit so we dont hit them again next frame
+                if distanceSquared < collisionRadiusSumSquared then 
                     p.hitList[e] = true
 
                     particles.spawn(e.x, e.y, "blood")
@@ -109,7 +112,7 @@ end
 
 function projectile.draw()
     for i, p in ipairs(projectile.projectiles) do
-        love.graphics.draw(projectileImage, p.x, p.y, p.rotation, 0.3, 0.3, 6, 9)
+        love.graphics.draw(projectileImage, p.x, p.y, p.rotation, 1, 1, 6, 9)
     end
     love.graphics.setColor(1, 1, 1)
 end

@@ -49,7 +49,7 @@ function particles.draw()
         love.graphics.setColor(p.color[1], p.color[2], p.color[3], alpha)
         
         -- Draw a tiny square (2x2 pixels)
-        love.graphics.rectangle("fill", p.x, p.y, 4, 4)
+        love.graphics.rectangle("fill", p.x, p.y, 8, 8)
     end
     -- Reset color so other things don't look transparent
     love.graphics.setColor(1, 1, 1, 1)

@@ -18,7 +18,7 @@ function enemyUnit.spawn(x, y)
         bossTime = 0
     end
 
-    e.collider = world:newRectangleCollider(x, y, 6,7)
+    e.collider = world:newRectangleCollider(x, y, 64, 64)
     e.collider:setFixedRotation(true)
     e.collider:setMass(1)
 
@@ -28,7 +28,7 @@ function enemyUnit.spawn(x, y)
     e.y = y
 
     local startingHealth = 20
-    local startingSpeed = 100
+    local startingSpeed = 200
     local startingDamage = 20
     local startingXp = 100
     
@@ -88,7 +88,29 @@ local function getDirectionToPlayer(enemy)
         dy = dy / len
     end
 
-    return dx, dy
+    local checkDistance = 60
+    local checkX = enemy.x + dx * checkDistance
+    local checkY = enemy.y + dy * checkDistance
+    
+    if not (isPositionOnWater and isPositionOnWater(checkX, checkY)) then
+        return dx, dy  
+    end
+
+    for i = 0, 7 do
+        local angle = i * math.pi / 4
+        local testDx = math.cos(angle)
+        local testDy = math.sin(angle)
+        
+        checkX = enemy.x + testDx * checkDistance
+        checkY = enemy.y + testDy * checkDistance
+        
+        if not (isPositionOnWater and isPositionOnWater(checkX, checkY)) then
+            return testDx, testDy
+        end
+    end
+
+    local randomAngle = love.math.random() * 2 * math.pi
+    return math.cos(randomAngle), math.sin(randomAngle)
 end
 
 function enemyUnit.update(dt)
@@ -168,11 +190,9 @@ function enemyUnit.update(dt)
 
         local vx = dx * e.speed
         local vy = dy * e.speed
-        
-        -- Set velocity on the collider
+    
         e.collider:setLinearVelocity(vx, vy)
-        
-        -- Update the sprite position from the collider position
+      
         e.x = e.collider:getX()
         e.y = e.collider:getY()
 
@@ -207,9 +227,9 @@ function enemyUnit.draw()
         local ox = 96
         local oy = 96
         if e.isBoss then 
-            e.anim:draw(e.spriteSheet, e.x, e.y, 0, 0.7, 0.7, ox, oy)
+            e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1.5, 1.5, ox, oy)
         else 
-            e.anim:draw(e.spriteSheet, e.x, e.y, 0, 0.3, 0.3, ox, oy)
+            e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1, 1, ox, oy)
         end
     end
 

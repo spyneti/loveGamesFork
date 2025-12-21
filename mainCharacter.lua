@@ -6,7 +6,7 @@ function mainCharacter.load()
 
     camera = require "libraries/camera"
     cam = camera()
-    cam:zoom(4)
+    cam:zoom(1.5)
 
     anim8 = require "libraries/anim8"
     love.graphics.setDefaultFilter("nearest", "nearest")
@@ -16,17 +16,18 @@ function mainCharacter.load()
 
     require "projectile"
     projectile.load()
-
     player = {}
-    player.collider = world:newBSGRectangleCollider(400, 250, 12, 18, 4)
+
+
+    player.collider = world:newBSGRectangleCollider(400, 250, 48, 64, 4)
     player.collider:setFixedRotation(true)
     player.x = 32
     player.y = 32
-    player.speed = 150
+    player.speed = 300
     player.health = 100
     player.maxHealth = 100
     player.dmg = 25
-    player.projectileSpeed = 300
+    player.projectileSpeed = 600
     player.arrowCooldown = 0.5
     player.pierce = 1
 
@@ -59,12 +60,22 @@ function mainCharacter.load()
     player.currentSprite = player.idleSpriteSheet
 
     walls = {}
-    if gameMap.layers["walls"] then
-        for i, obj in pairs(gameMap.layers["walls"].objects) do
+    if gameMap.layers["collision"] then
+        for i, obj in pairs(gameMap.layers["collision"].objects) do
             local wall = world:newRectangleCollider(obj.x, obj.y, obj.width, obj.height)
             wall:setType("static")
             table.insert(walls, wall)
         end
+    end
+
+    if gameMap.layers["bushes"] then
+        for i, obj in pairs(gameMap.layers["bushes"].objects) do
+            -- Use the exact size from Tiled
+            local bushCollider = world:newRectangleCollider(obj.x, obj.y, obj.width, obj.height)
+            bushCollider:setType("static")
+            table.insert(walls, bushCollider)  -- Add to walls table
+        end
+        print("Created " .. #gameMap.layers["bushes"].objects .. " bush colliders")
     end
 
     player.walkSounds = {
@@ -171,13 +182,13 @@ function mainCharacter.update(dt)
 
     player.collider:setLinearVelocity(vx, vy)
 
-    local halfW = 12 / 2
-    local halfH = 18 / 2
-    local mapW = 90 * 16
-    local mapH = 90 * 16
+    local halfW = 48 / 2
+    local halfH = 64 / 2
+    local mapWorldW = gameMap.width * gameMap.tilewidth    -- e.g., 90 × 64 = 5760
+    local mapWorldH = gameMap.height * gameMap.tileheight
 
-    local x = math.max(halfW, math.min(player.collider:getX(), mapW - halfW))
-    local y = math.max(halfH, math.min(player.collider:getY(), mapH - halfH))
+    local x = math.max(halfW, math.min(player.collider:getX(), mapWorldW - halfW))
+    local y = math.max(halfH, math.min(player.collider:getY(), mapWorldH - halfH))
     player.collider:setPosition(x, y)
 
 
@@ -194,13 +205,13 @@ function mainCharacter.update(dt)
         end
     end
 
-    local zoom = 4
+    local zoom = 1.5
 
     local screenW = love.graphics.getWidth() / zoom
     local screenH = love.graphics.getHeight() / zoom
-    
-    local camX = math.max(screenW/2, math.min(player.x, mapW - screenW/2))
-    local camY = math.max(screenH/2, math.min(player.y, mapH - screenH/2))
+  
+    local camX = math.max(screenW/2, math.min(player.x, mapWorldW - screenW/2))
+    local camY = math.max(screenH/2, math.min(player.y, mapWorldH - screenH/2))
 
     cam:lookAt(camX, camY)
 
@@ -213,8 +224,13 @@ end
 
 function mainCharacter.draw()
     cam:attach()
-        gameMap:drawLayer(gameMap.layers["ground"], 0, 0, 4, 4)
-        gameMap:drawLayer(gameMap.layers["flowers"], 0, 0, 4, 4)
+        gameMap:drawLayer(gameMap.layers["ground"], 0, 0, 2, 2)
+        gameMap:drawLayer(gameMap.layers["water"], 0, 0, 2, 2)
+        gameMap:drawLayer(gameMap.layers["water shadow"], 0, 0, 2, 2)
+
+        if decorations and decorations.draw then
+            decorations.draw()
+        end
 
         if player.invincible then
             love.graphics.setColor(1, 1, 1, 0.5)
@@ -222,7 +238,7 @@ function mainCharacter.draw()
 
         local ox = 96
         local oy = 96
-        player.anim:draw(player.currentSprite, player.x, player.y, 0, 0.3, 0.3, ox, oy)
+        player.anim:draw(player.currentSprite, player.x, player.y, 0, 1, 1, ox, oy)
 
         love.graphics.setColor(1, 1, 1)
 
@@ -234,7 +250,7 @@ function mainCharacter.draw()
 
         projectile.draw()
 
-        gameMap:drawLayer(gameMap.layers["trees"], 0, 0, 4, 4)
+        gameMap:drawLayer(gameMap.layers["tree"], 0, 0, 2, 2)
         
         love.graphics.setColor(1, 1, 1)
 

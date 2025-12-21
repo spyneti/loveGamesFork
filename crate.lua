@@ -3,30 +3,30 @@ crate.activeBonuses = {}
 crate.particleTexts = {}
 crate.crates = {}
 crate.spawnTimer = 0
-crate.spawnInterval = 2
+crate.spawnInterval = 120
 
 crate.types = {
     {
         name = "Health crate",
-        color = {1, 0.3, 0.3}, -- Red
+        color = {0.2, 0.8, 0.2}, -- Green
         reward = "health",
         value = 50
     },
     {
         name = "Damage crate", 
-        color = {1, 0.5, 0}, -- Orange
+        color = {0.9, 0.1, 0.1}, -- Red
         reward = "damage",
         value = 20
     },
     {
         name = "Speed crate",
-        color = {0.3, 0.3, 1}, -- Blue
+        color = {0.1, 0.7, 0.9}, -- Blue
         reward = "speed", 
         value = 10
     },
     {
         name = "XP crate",
-        color = {0.5, 0, 0.8}, -- Purple
+        color = {1, 0.8, 0}, -- yellow
         reward = "xp",
         value = 500
     }
@@ -96,7 +96,7 @@ function crate.spawnRandomcrate()
 end
 
 function crate.draw()
-    local scale = 0.3 
+    local scale = 0.5
     for i, c in ipairs(crate.crates) do
         if not c.collected then
             if crate.spriteSheet and crate.crateQuad then
@@ -177,9 +177,9 @@ function crate.applyReward(crateType, x, y)
         }
     
     if crateType.reward == "health" then
-            player.health = math.min(player.health + crateType.value, player.maxHealth)
+            player.health = player.health + crateType.value
             rewardText = "+" .. crateType.value .. " Health! (20s)"
-            bonus.originalValue = nil  -- Health is instant, not temporary stat
+            bonus.originalValue = player.health
         elseif crateType.reward == "damage" then
             bonus.originalValue = player.dmg
             player.dmg = player.dmg + crateType.value
@@ -249,6 +249,9 @@ function crate.updateBonuses(dt)
                 elseif bonus.type == "speed" and bonus.originalValue then
                     player.speed = bonus.originalValue
                     print("Speed bonus expired!")
+                elseif bonus.type == "health" and bonus.originalValue then
+                    player.health = bonus.originalValue
+                    print("Health bonus expired!")
                 end
                 
                 table.remove(crate.activeBonuses, i)
