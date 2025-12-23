@@ -374,7 +374,6 @@ function checkCollisions()
     end
 end
 
--- NEW FUNCTION: Check if a position is on water
 function isPositionOnWater(x, y)
     if not gameMap then
         return false
@@ -409,6 +408,7 @@ function isPositionOnWater(x, y)
     
     return false  -- Not on water
 end
+
 function checkDeath()
     if player.health <= 0 then
         local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
