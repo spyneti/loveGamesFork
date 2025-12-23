@@ -149,6 +149,7 @@ function love.draw()
     local font = love.graphics.getFont()
 
     local xpText = "XP: " .. math.floor(xp)
+    local xpTextY = standardPadding
     love.graphics.print(xpText, standardPadding, standardPadding, 0, 2)
 
     local timeText = "TIME: " .. math.floor(time) .. "s"
@@ -189,6 +190,7 @@ function love.draw()
 
     love.graphics.draw(healthBarFrame, -35, xpTextY + barHeight + padding * 3)
 
+    local xpTextX = standardPadding
     love.graphics.draw(xpBarFill, xpQuad, xpTextX + barOffset.x, xpTextY + barHeight + padding * 3 + 20)
 
     love.graphics.print(math.floor(xp) .. "/" .. xpThreshold, baseX + barOffset.x, xpTextY + barHeight + padding * 3 + 24)
@@ -406,6 +408,7 @@ function isPositionOnWater(x, y)
     end
     
     return false  -- Not on water
+end
 function checkDeath()
     if player.health <= 0 then
         local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
