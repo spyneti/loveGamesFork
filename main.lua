@@ -409,6 +409,12 @@ function isPositionOnWater(x, y)
     return false  -- Not on water
 end
 
+<<<<<<< HEAD
+_G.isPositionOnWater = isPositionOnWater
+
+
+=======
+>>>>>>> 0d7c4b1554c599795eef44cc2c7afca22739a5f9
 function checkDeath()
     if player.health <= 0 then
         local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
