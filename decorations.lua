@@ -62,8 +62,8 @@ function Decorations.load(map)
 
                 local data = Decorations.frameData[objType]
 
-                local x = obj.x + (obj.width or data.width)/2
-                local y = obj.y + (obj.height or data.height)/2
+                local x = obj.x
+                local y = obj.y
 
                 table.insert(Decorations.objects, {
                     x = x,
@@ -116,8 +116,8 @@ function Decorations.draw()
         
         if sprite and anim then
             -- Calculate center offset (half of original frame size, not scaled)
-            local offsetX = data.width / 2
-            local offsetY = data.height / 2
+            local offsetX = 0
+            local offsetY = 0
             
             -- Draw with type-specific settings
             if obj.type == "duck" then
