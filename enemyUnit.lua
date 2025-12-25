@@ -1,5 +1,5 @@
 enemyUnit = {}
-enemyUnit.enemies = {} -- A list to hold all enemies
+enemyUnit.enemies = {}
 
 local enemySpriteSheet
 local tntSpriteSheet
@@ -18,11 +18,12 @@ function enemyUnit.spawn(x, y)
         bossTime = 0
     end
 
-    e.collider = world:newRectangleCollider(x, y, 64, 64)
-    e.collider:setFixedRotation(true)
-    e.collider:setMass(1)
-
     timeBuff = time / 10
+
+    -- Simple collision box like the old version
+    e.collider = world:newRectangleCollider(x, y, 40, 40)
+    e.collider:setFixedRotation(true)
+    e.collider:setCollisionClass('Enemy')
 
     e.x = x
     e.y = y
@@ -51,13 +52,12 @@ function enemyUnit.spawn(x, y)
         e.attackTimer = 0
         e.attackInterval = 4
     end
+    
     e.animations = {
-        -- down  = anim8.newAnimation(e.grid("1-4", 1), 0.2),
         left  = anim8.newAnimation(e.grid("1-6", 2), 0.2):flipH(),
         right = anim8.newAnimation(e.grid("1-6", 2), 0.2),
         attackRight = anim8.newAnimation(e.grid("1-6", 3), 0.1, "pauseAtEnd"),
         attackLeft  = anim8.newAnimation(e.grid("1-6", 3), 0.1, "pauseAtEnd"):flipH()
-        -- up    = anim8.newAnimation(e.grid("1-4", 4), 0.2)
     }
     e.facing = "right"
     e.anim = e.animations.right
@@ -78,7 +78,7 @@ function enemyUnit.load()
     time = 0
 end
 
-local function getDirectionToPlayer(enemy)
+function getDirectionToPlayer(enemy)
     local dx = player.x - enemy.x
     local dy = player.y - enemy.y
 
@@ -88,29 +88,7 @@ local function getDirectionToPlayer(enemy)
         dy = dy / len
     end
 
-    local checkDistance = 60
-    local checkX = enemy.x + dx * checkDistance
-    local checkY = enemy.y + dy * checkDistance
-    
-    if not (isPositionOnWater and isPositionOnWater(checkX, checkY)) then
-        return dx, dy  
-    end
-
-    for i = 0, 7 do
-        local angle = i * math.pi / 4
-        local testDx = math.cos(angle)
-        local testDy = math.sin(angle)
-        
-        checkX = enemy.x + testDx * checkDistance
-        checkY = enemy.y + testDy * checkDistance
-        
-        if not (isPositionOnWater and isPositionOnWater(checkX, checkY)) then
-            return testDx, testDy
-        end
-    end
-
-    local randomAngle = love.math.random() * 2 * math.pi
-    return math.cos(randomAngle), math.sin(randomAngle)
+    return dx, dy
 end
 
 function enemyUnit.update(dt)
@@ -122,14 +100,14 @@ function enemyUnit.update(dt)
             e.attackTimer = e.attackTimer + dt
             if e.attackTimer >= e.attackInterval then
                 e.isAttacking = true
-                e.attackTimer = 0 -- Reset timer
+                e.attackTimer = 0
 
                 if e.facing == "right" then
                     e.anim = e.animations.attackRight
                 else
                     e.anim = e.animations.attackLeft
                 end
-                -- Create a new Dynamite objects
+                
                 local bigWeakDynamite = {
                     x = player.x + math.random(-100, 100), 
                     y = player.y + math.random(-100, 100),
@@ -157,7 +135,7 @@ function enemyUnit.update(dt)
             end
 
             if e.isAttacking then
-                e.collider:setLinearVelocity(0, 0) 
+                e.collider:setLinearVelocity(0, 0)  -- Stop when attacking
                 
                 if e.anim.status == "paused" then 
                     e.isAttacking = false
@@ -165,11 +143,14 @@ function enemyUnit.update(dt)
                 end
                 
                 e.anim:update(dt)
-
                 goto continue
             end
         end
-
+        
+        if e.isAttacking then
+            goto continue
+        end
+        
         local dx, dy = getDirectionToPlayer(e)
 
         if math.abs(dx) > math.abs(dy) then
@@ -188,35 +169,33 @@ function enemyUnit.update(dt)
             end
         end
 
+        -- Move using physics like the old version
         local vx = dx * e.speed
         local vy = dy * e.speed
-    
+        
         e.collider:setLinearVelocity(vx, vy)
-      
+        
+        -- Update position from collider
         e.x = e.collider:getX()
         e.y = e.collider:getY()
 
         e.anim:update(dt)
 
         ::continue::
-
-    end
+    end  -- This ends the for loop
 
     for i = #enemyUnit.dynamites, 1, -1 do
         local d = enemyUnit.dynamites[i]
         d.timer = d.timer - dt
 
         if d.timer <= 0 then
-            -- Check distance between dynamite and player
             local dist = math.sqrt((d.x - player.x)^2 + (d.y - player.y)^2)
             
             if dist < d.radius then
-                -- Assuming you have a player.takeDamage function
                 player.health = player.health - d.damage
                 checkDeath()
             end
 
-            -- Remove dynamite from the list
             table.remove(enemyUnit.dynamites, i)
         end
     end
@@ -226,6 +205,7 @@ function enemyUnit.draw()
     for i, e in ipairs(enemyUnit.enemies) do
         local ox = 96
         local oy = 96
+        
         if e.isBoss then 
             e.anim:draw(e.spriteSheet, e.x, e.y, 0, 1.5, 1.5, ox, oy)
         else 
@@ -234,20 +214,60 @@ function enemyUnit.draw()
     end
 
     for i, d in ipairs(enemyUnit.dynamites) do
-        -- Draw the "Zone" (Red Circle)
-        -- We make it blink or fade based on the timer for effect
-        love.graphics.setColor(1, 0, 0, 0.5) -- Red with 50% opacity
+        love.graphics.setColor(1, 0, 0, 0.5)
         love.graphics.circle("fill", d.x, d.y, d.radius)
         
-        -- Draw an outline
         love.graphics.setColor(1, 0, 0, 1)
         love.graphics.circle("line", d.x, d.y, d.radius)
         
-        -- Optional: Draw a smaller expanding circle to show when it will pop
-        local percent = 1 - (d.timer / 5.0) -- Goes from 0 to 1
-        love.graphics.setColor(1, 1, 0, 0.8) -- Yellow
+        local percent = 1 - (d.timer / 5.0)
+        love.graphics.setColor(1, 1, 0, 0.8)
         love.graphics.circle("fill", d.x, d.y, d.radius * percent)
     end
 
-    love.graphics.setColor(1, 1, 1) -- Reset color
+    love.graphics.setColor(1, 1, 1)
+end
+
+function checkCollisions()
+    -- Since both player and enemies now have 40x40 colliders, we can use simpler check
+    local collisionSize = 40
+    local collisionDistanceSquared = collisionSize * collisionSize  -- 40 * 40 = 1600
+
+    if player.invincible == false then
+        for i = #enemyUnit.enemies, 1, -1 do
+            local e = enemyUnit.enemies[i] 
+
+            local dx = player.x - e.x
+            local dy = player.y - e.y
+            local distanceSquared = (dx * dx) + (dy * dy)
+
+            if distanceSquared < collisionDistanceSquared then
+                
+                player.health = player.health - e.dmg
+                if player.health <= 0 then
+
+                    local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
+                    randomDeathSound:play()
+
+                    isDead = true
+                    isPaused = true
+
+                    if time > bestTime then
+                        bestTime = time
+                        newRecord = true
+                        saveBestTime() 
+                        print("NEW RECORD! " .. math.floor(time) .. " seconds!")
+                    else
+                        newRecord = false
+                    end
+                end
+                checkDeath()
+                
+                player.invincible = true
+                player.invincibleTimer = player.iframeDuration
+
+                break 
+            end
+        end
+    end
 end

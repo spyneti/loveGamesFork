@@ -22,18 +22,8 @@ function love.load()
     require "enemyUnit"
     require "particles"
     crate = require "crate"
-    decorations = require "decorations"
 
     mainCharacter.load()  
-
-    _G.gameMap = mainCharacter.gameMap or gameMap
-    
-    if _G.gameMap then
-        decorations.load(_G.gameMap)
-        print("✓ Decorations loaded with map")
-    else
-        print("❌ ERROR: No gameMap found for decorations!")
-    end
     
     enemyUnit.load() 
     crate.load()
@@ -41,8 +31,13 @@ function love.load()
 
     local cursorData = love.image.newImageData("sprites/cursor.png")
 
-    local customCursor = love.mouse.newCursor(cursorData, 0, 0)
+    local cursorWidth = cursorData:getWidth()
+    local cursorHeight = cursorData:getHeight()
 
+    local hotspotX = cursorWidth / 2 - 10
+    local hotspotY = cursorHeight / 2 - 15
+
+    local customCursor = love.mouse.newCursor(cursorData, hotspotX, hotspotY)
     love.mouse.setCursor(customCursor)
 
     healthBarFrame = love.graphics.newImage("sprites/HealthBar-Base.png")
@@ -102,7 +97,6 @@ function love.update(dt)
         mainCharacter.update(dt) 
         enemyUnit.update(dt)
         crate.update(dt)
-        decorations.update(dt)
         world:update(dt) 
 
         checkCollisions()
@@ -138,7 +132,6 @@ function love.update(dt)
 end
 
 function love.draw()
-    decorations.draw()
     mainCharacter.draw()
     crate.drawTextEffects()
     crate.drawBonusTimers()
@@ -409,12 +402,9 @@ function isPositionOnWater(x, y)
     return false  -- Not on water
 end
 
-<<<<<<< HEAD
 _G.isPositionOnWater = isPositionOnWater
 
 
-=======
->>>>>>> 0d7c4b1554c599795eef44cc2c7afca22739a5f9
 function checkDeath()
     if player.health <= 0 then
         local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]

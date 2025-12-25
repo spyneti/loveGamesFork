@@ -2,7 +2,7 @@ mainCharacter = {}
 
 function mainCharacter.load()
     wf = require "libraries/windfield"
-    world = wf.newWorld(0, 0)
+    world = wf.newWorld(0, 0, true)
 
     _G.world = world
 
@@ -18,13 +18,21 @@ function mainCharacter.load()
 
     require "projectile"
     projectile.load()
+    
+    -- Initialize player
     player = {}
-
-
     player.x = 32
     player.y = 32
-    player.collider = world:newBSGRectangleCollider(player.x, player.y, 48, 64, 4)
+    
+    -- Simple collision box for character body (40x40 like enemies)
+    local collisionW = 40
+    local collisionH = 40
+    
+    -- Use simple rectangle collider like enemies
+    player.collider = world:newRectangleCollider(player.x, player.y, collisionW, collisionH)
     player.collider:setFixedRotation(true)
+    
+    -- Player stats
     player.speed = 300
     player.health = 100
     player.maxHealth = 100
@@ -37,7 +45,6 @@ function mainCharacter.load()
     player.iframeDuration = 0.2
     player.invincibleTimer = 0
 
-
     player.idleSpriteSheet = love.graphics.newImage("sprites/Archer_Idle.png")
     player.runSpriteSheet = love.graphics.newImage("sprites/Archer_Run.png")
 
@@ -46,104 +53,84 @@ function mainCharacter.load()
     
     player.animations = {}
 
-    -- player.animations.down = anim8.newAnimation( player.grid("1-4", 1), 0.2)
     player.animations.rightRun = anim8.newAnimation( player.runGrid("1-4", 1), 0.1)
     player.animations.leftRun = anim8.newAnimation( player.runGrid("1-4", 1), 0.1):flipH()
     
     player.animations.rightIdle = anim8.newAnimation( player.idleGrid("1-6", 1), 0.1)
     player.animations.leftIdle = anim8.newAnimation( player.idleGrid("1-6", 1), 0.1):flipH()
 
-    -- player.animations.up = anim8.newAnimation( player.grid("1-4", 4), 0.2)
-
     player.facing = "right"
-
     player.anim = player.animations.rightIdle
-
     player.currentSprite = player.idleSpriteSheet
 
     walls = {}
     
-    -- 1. ROCK COLLIDERS (centered to match visual rocks)
+    -- Load collision objects WITHOUT modifying positions
+    -- (Tiled coordinates should match rendered positions)
+    
+    -- 1. ROCK COLLIDERS
     if gameMap.layers["rocks_collision"] then
         for i, obj in pairs(gameMap.layers["rocks_collision"].objects) do
-            -- Calculate CENTERED position (matches decorations.lua)
-            local centerX = obj.x + obj.width/2
-            local centerY = obj.y + obj.height/2
-            
-            -- Create collider at centered position (slightly smaller)
-            local colliderWidth = obj.width * 0.8
-            local colliderHeight = obj.height * 0.8
-            
             local rockCollider = world:newRectangleCollider(
-                centerX - colliderWidth/2,
-                centerY - colliderHeight/2,
-                colliderWidth,
-                colliderHeight
+                obj.x,
+                obj.y,
+                obj.width,
+                obj.height
             )
             rockCollider:setType("static")
             table.insert(walls, rockCollider)
         end
+        print("Created " .. #gameMap.layers["rocks_collision"].objects .. " rock colliders")
     end
     
-    -- 2. WATER COLLIDERS (centered)
+    -- 2. WATER COLLIDERS
     if gameMap.layers["water_collision"] then
         for i, obj in pairs(gameMap.layers["water_collision"].objects) do
-            -- Calculate CENTERED position
-            local centerX = obj.x + obj.width/2
-            local centerY = obj.y + obj.height/2
-            
-            -- Create collider at centered position
             local waterCollider = world:newRectangleCollider(
-                centerX - obj.width/2,
-                centerY - obj.height/2,
+                obj.x,
+                obj.y,
                 obj.width,
                 obj.height
             )
             waterCollider:setType("static")
             table.insert(walls, waterCollider)
         end
+        print("Created " .. #gameMap.layers["water_collision"].objects .. " water colliders")
     end
     
-    -- 3. WALL COLLIDERS (centered)
+    -- 3. WALL COLLIDERS
     if gameMap.layers["walls_collision"] then
         for i, obj in pairs(gameMap.layers["walls_collision"].objects) do
-            -- Calculate CENTERED position
-            local centerX = obj.x + obj.width/2
-            local centerY = obj.y + obj.height/2
-            
-            -- Create collider at centered position
             local wall = world:newRectangleCollider(
-                centerX - obj.width/2,
-                centerY - obj.height/2,
+                obj.x,
+                obj.y,
                 obj.width,
                 obj.height
             )
             wall:setType("static")
             table.insert(walls, wall)
         end
+        print("Created " .. #gameMap.layers["walls_collision"].objects .. " wall colliders")
     end
     
-    -- 4. BUSH COLLIDERS (already centered - keep as is)
+    -- 4. BUSH COLLIDERS
     if gameMap.layers["bushes"] then
         for i, obj in pairs(gameMap.layers["bushes"].objects) do
-            local bushWidth = obj.width or 128
-            local bushHeight = obj.height or 128
-            local centerX = obj.x + bushWidth/2
-            local centerY = obj.y + bushHeight/2
-
-            local colliderWidth = bushWidth * 0.7
-            local colliderHeight = bushHeight * 0.7
-
+            -- Make bush colliders smaller (60% of bush size)
+            local colliderW = obj.width * 0.6
+            local colliderH = obj.height * 0.6
+            
+            -- Center the smaller collider
             local bushCollider = world:newRectangleCollider(
-                centerX - colliderWidth/2, 
-                centerY - colliderHeight/2, 
-                colliderWidth, 
-                colliderHeight
+                obj.x + (obj.width - colliderW) / 2,
+                obj.y + (obj.height - colliderH) / 2,
+                colliderW,
+                colliderH
             )
             bushCollider:setType("static")
             table.insert(walls, bushCollider)
         end
-        print("Created " .. #gameMap.layers["bushes"].objects .. " bush colliders (centered)")
+        print("Created " .. #gameMap.layers["bushes"].objects .. " bush colliders")
     end
 
     player.walkSounds = {
@@ -296,39 +283,55 @@ function mainCharacter.draw()
         gameMap:drawLayer(gameMap.layers["water"], 0, 0, 2, 2)
         gameMap:drawLayer(gameMap.layers["water shadow"], 0, 0, 2, 2)
 
-        if decorations and decorations.draw then
-            decorations.draw()
-        end
-
-        -- DEBUG: DRAW ALL COLLISION BOXES (INSIDE CAMERA - WILL MOVE WITH CAMERA)
-        love.graphics.setColor(1, 0, 0, 0.3)  -- Red with transparency for walls
+        -- FIXED: Draw collision boxes INSIDE camera (so they move with world)
+        -- Draw wall collision boxes (RED)
+        love.graphics.setColor(1, 0, 0, 0.3)
         for i, wall in ipairs(walls) do
             if wall:isActive() then
-                local x, y, w, h = wall:getBoundingBox()
-                love.graphics.rectangle("line", x, y, w, h)  -- Draw as LINE not FILL
+                -- Use the fixtures to get the actual shape
+                local fixtures = wall:getFixtures()
+                if fixtures and fixtures[1] then
+                    local shape = fixtures[1]:getShape()
+                    if shape:getType() == "polygon" then
+                        love.graphics.polygon("line", wall:getWorldPoints(shape:getPoints()))
+                    end
+                end
             end
         end
         
         -- Draw player collision box (GREEN)
-        love.graphics.setColor(0, 1, 0, 0.3)
-        local playerX, playerY, playerW, playerH = player.collider:getBoundingBox()
-        love.graphics.rectangle("line", playerX, playerY, playerW, playerH)
+        love.graphics.setColor(0, 1, 0, 0.5)
+        if player.collider and player.collider:isActive() then
+            local fixtures = player.collider:getFixtures()
+            if fixtures and fixtures[1] then
+                local shape = fixtures[1]:getShape()
+                if shape:getType() == "polygon" then
+                    love.graphics.polygon("fill", player.collider:getWorldPoints(shape:getPoints()))
+                end
+            end
+        end
         
         -- Draw enemy collision boxes (BLUE)
         love.graphics.setColor(0, 0, 1, 0.3)
         for i, e in ipairs(enemyUnit.enemies) do
             if e.collider and e.collider:isActive() then
-                local ex, ey, ew, eh = e.collider:getBoundingBox()
-                love.graphics.rectangle("line", ex, ey, ew, eh)
+                local fixtures = e.collider:getFixtures()
+                if fixtures and fixtures[1] then
+                    local shape = fixtures[1]:getShape()
+                    if shape:getType() == "polygon" then
+                        love.graphics.polygon("line", e.collider:getWorldPoints(shape:getPoints()))
+                    end
+                end
             end
         end
         
-        love.graphics.setColor(1, 1, 1)  -- Reset color
+        love.graphics.setColor(1, 1, 1)
 
         if player.invincible then
             love.graphics.setColor(1, 1, 1, 0.5)
         end
 
+        -- Draw sprite centered on collision position
         local ox = 96
         local oy = 96
         player.anim:draw(player.currentSprite, player.x, player.y, 0, 1, 1, ox, oy)
@@ -349,31 +352,13 @@ function mainCharacter.draw()
 
     cam:detach()
     
-    -- DEBUG: Also draw simplified collision indicators (RED DOTS) for comparison
-    love.graphics.setColor(1, 0, 0, 0.5)
-    for i, wall in ipairs(walls) do
-        if wall:isActive() then
-            local x, y, w, h = wall:getBoundingBox()
-            -- Draw a small dot at the center
-            local centerX = x + w/2
-            local centerY = y + h/2
-            
-            -- Convert to screen manually
-            local camX, camY = cam:position()
-            local zoom = cam.scale or 1.5
-            local screenX = (centerX - camX) * zoom + love.graphics.getWidth()/2
-            local screenY = (centerY - camY) * zoom + love.graphics.getHeight()/2
-            
-            love.graphics.circle("fill", screenX, screenY, 3)
-        end
-    end
-    
-    -- Draw text to show what's what
+    -- DEBUG INFO (outside camera)
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("RED LINES = Collision boxes (move with camera)", 10, 10)
-    love.graphics.print("RED DOTS = Same collision centers (fixed on screen)", 10, 30)
-    love.graphics.print("GREEN = Player collision", 10, 50)
-    love.graphics.print("BLUE = Enemy collisions", 10, 70)
+    love.graphics.print("RED = Walls/Rocks/Water", 10, 10)
+    love.graphics.print("GREEN = Player collision", 10, 30)
+    love.graphics.print("BLUE = Enemy collisions", 10, 50)
+    love.graphics.print("Player: " .. math.floor(player.x) .. "," .. math.floor(player.y), 10, 70)
+    love.graphics.print("Total walls: " .. #walls, 10, 90)
     
     love.graphics.setColor(1, 1, 1)
 end
