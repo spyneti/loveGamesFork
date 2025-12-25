@@ -92,6 +92,8 @@ function projectile.update(dt)
                         xp = xp + e.xpGain
                         checkLevelUp()
                         table.remove(enemyUnit.enemies, j)
+
+                        e.collider:destroy()
                     end
                     
                     -- if the projectile ran out of pierce power, break the enemy loop

@@ -33,9 +33,9 @@ function love.load()
     
     if _G.gameMap then
         decorations.load(_G.gameMap)
-        print("✓ Decorations loaded with map")
+        print("Decorations loaded with map")
     else
-        print("❌ ERROR: No gameMap found for decorations!")
+        print("ERROR: No gameMap found for decorations!")
     end
     
     enemyUnit.load() 
@@ -65,8 +65,8 @@ function love.load()
     hoverSound = love.audio.newSource("menu/menu sound effect-sfx.mp3", "static")
     clickSound = love.audio.newSource("menu/menu sellect sfx.mp3", "static")
 
-    hoverSound:setVolume(0.05) 
-    clickSound:setVolume(0.05)
+    hoverSound:setVolume(0.03) 
+    clickSound:setVolume(0.0)
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -101,7 +101,6 @@ function love.load()
 end
 
 function love.update(dt) 
-    -- Only update game logic if we are playing
     if gameState == "playing" then
         if not isPaused then
             mainCharacter.update(dt) 
@@ -244,9 +243,7 @@ function love.draw()
                 drawButton("+1 Piercing", buttonX, buttonY + 250, buttonWidth, buttonHeight,
                         powerupChoice == "piercing")
             else
-                -- REGULAR PAUSE MENU OR DEATH MENU
                 if isDead then
-                    -- DEATH MENU (shows survival time)
                     local menuWidth = 400
                     local menuHeight = 250 
                     local menuX = (windowWidth - menuWidth) / 2
@@ -274,7 +271,6 @@ function love.draw()
                     drawButton("RESTART", buttonX, menuY + 100, buttonWidth, 50, powerupChoice == "restart")
                     drawButton("QUIT", buttonX, menuY + 170, buttonWidth, 50, powerupChoice == "quit")     
                 else
-                    -- NORMAL PAUSE MENU
                     local menuWidth = 400
                     local menuHeight = 200
                     local menuX = (windowWidth - menuWidth) / 2
@@ -306,12 +302,7 @@ function drawMainMenu()
 
     -- 2. Draw Title
     love.graphics.setColor(1, 1, 1)
-    local title = "Goblin Survivors"
     local font = love.graphics.getFont()
-    -- specific scaling for title to make it big
-    local scale = 4 
-    local textW = font:getWidth(title) * scale
-    love.graphics.print(title, (w - textW) / 2, h * 0.2, 0, scale)
 
     -- 3. Draw Buttons
     local btnW = 300
@@ -416,47 +407,7 @@ function checkCollisions()
     end
 end
 
-function isPositionOnWater(x, y)
-    if not gameMap then
-        return false
-    end
-    
-    -- Convert world coordinates to tile coordinates
-    local tileX = math.floor(x / gameMap.tilewidth) + 1
-    local tileY = math.floor(y / gameMap.tileheight) + 1
-    
-    -- Check water layer
-    local waterLayer = gameMap.layers["water"]
-    if waterLayer then
-        -- Check if there's a water tile at this position
-        if waterLayer.data[tileY] and waterLayer.data[tileY][tileX] then
-            local tile = waterLayer.data[tileY][tileX]
-            if tile and tile.gid and tile.gid > 0 then
-                return true  -- Position is on water
-            end
-        end
-    end
-    
-    -- Also check water shadow layer if it exists
-    local waterShadowLayer = gameMap.layers["water shadow"]
-    if waterShadowLayer then
-        if waterShadowLayer.data[tileY] and waterShadowLayer.data[tileY][tileX] then
-            local tile = waterShadowLayer.data[tileY][tileX]
-            if tile and tile.gid and tile.gid > 0 then
-                return true  -- Position is on water shadow
-            end
-        end
-    end
-    
-    return false  -- Not on water
-end
 
-<<<<<<< HEAD
-_G.isPositionOnWater = isPositionOnWater
-
-
-=======
->>>>>>> 0d7c4b1554c599795eef44cc2c7afca22739a5f9
 function checkDeath()
     if player.health <= 0 then
         local randomDeathSound = sounds.deathSounds[love.math.random(1, 5)]
@@ -468,65 +419,65 @@ function checkDeath()
 end
 
 function spawnEnemiesAtRandomPositions()
-    local numberOfEnemies = math.floor(time / 30) + love.math.random(1, 2)
-    local playerX = player.x
-    local playerY = player.y
+    -- --- 1. BALANCE SETTINGS ---
+    -- Current logic: Start with 1-2 enemies. Every 60 seconds, add 1 more to the wave.
+    -- CAP: Never spawn more than 6 enemies at once to prevent lag/unfairness.
+    local difficultyFactor = math.floor(time / 60) 
+    local numberOfEnemies = math.min(6, love.math.random(1, 2) + difficultyFactor)
+
+    -- --- 2. OFF-SCREEN CALCULATION ---
+    -- Get the real size of the screen in the game world
+    local screenW = love.graphics.getWidth() / zoom
+    local screenH = love.graphics.getHeight() / zoom
     
-    local cameraZoom = 4
-    local screenW = love.graphics.getWidth() / cameraZoom
-    local screenH = love.graphics.getHeight() / cameraZoom
+    -- Calculate distance from player center to the screen corner.
+    -- If we spawn further than this, it is GUARANTEED to be off-screen.
+    local cornerDistance = math.sqrt((screenW/2)^2 + (screenH/2)^2)
     
-    local maxAttempts = 20
-    
+    local minDist = cornerDistance + 50  -- Just outside the screen
+    local maxDist = cornerDistance + 250 -- Not too far away
+
+    -- --- 3. SPAWN LOOP ---
     for i = 1, numberOfEnemies do
-        local spawnCordX, spawnCordY
+        local spawnX, spawnY
         local validSpawn = false
         local attempts = 0
+        local maxAttempts = 20
 
         while not validSpawn and attempts < maxAttempts do
             attempts = attempts + 1
 
-            local minDistanceFromPlayer = 300 
-            local maxDistanceFromPlayer = 500 
-
+            -- Pick a random angle and distance
             local angle = love.math.random() * 2 * math.pi
-            local distance = love.math.random(minDistanceFromPlayer, maxDistanceFromPlayer)
+            local distance = love.math.random(minDist, maxDist)
             
-            spawnCordX = playerX + math.cos(angle) * distance
-            spawnCordY = playerY + math.sin(angle) * distance
+            spawnX = player.x + math.cos(angle) * distance
+            spawnY = player.y + math.sin(angle) * distance
 
-            local mapWorldW = gameMap.width * gameMap.tilewidth
-            local mapWorldH = gameMap.height * gameMap.tileheight
-            
-            local spawnPadding = 50
-            spawnCordX = math.max(spawnPadding, math.min(spawnCordX, mapWorldW - spawnPadding))
-            spawnCordY = math.max(spawnPadding, math.min(spawnCordY, mapWorldH - spawnPadding))
+            -- Clamp to Map Boundaries (So they don't spawn in the void)
+            local mapW = gameMap.width * gameMap.tilewidth
+            local mapH = gameMap.height * gameMap.tileheight
+            spawnX = math.max(64, math.min(spawnX, mapW - 64))
+            spawnY = math.max(64, math.min(spawnY, mapH - 64))
 
-            if not isPositionOnWater(spawnCordX, spawnCordY) then
-                local dx = spawnCordX - playerX
-                local dy = spawnCordY - playerY
-                local actualDistance = math.sqrt(dx*dx + dy*dy)
-                
-                if actualDistance >= minDistanceFromPlayer then
-                    validSpawn = true
-                end
+            -- --- 4. WALL CHECK (CRITICAL) ---
+            -- We query the physics world to see if this spot is empty.
+            -- We check a 32x32 box where the enemy would stand.
+            -- If 'len' is 0, the spot is empty!
+            local collidersInSpot = world:queryRectangleArea(spawnX - 16, spawnY - 16, 32, 32)
+            if #collidersInSpot == 0 then
+                validSpawn = true
             end
         end
-        
-        if validSpawn then
-            enemyUnit.spawn(spawnCordX, spawnCordY)
-        else
-            local fallbackDistance = 400
-            local fallbackAngle = love.math.random() * 2 * math.pi
-            spawnCordX = playerX + math.cos(fallbackAngle) * fallbackDistance
-            spawnCordY = playerY + math.sin(fallbackAngle) * fallbackDistance
 
-            local mapWorldW = gameMap.width * gameMap.tilewidth
-            local mapWorldH = gameMap.height * gameMap.tileheight
-            spawnCordX = math.max(50, math.min(spawnCordX, mapWorldW - 50))
-            spawnCordY = math.max(50, math.min(spawnCordY, mapWorldH - 50))
-            
-            enemyUnit.spawn(spawnCordX, spawnCordY)
+        -- Only spawn if we found a valid spot (or force it if it's the fallback)
+        if validSpawn then
+            enemyUnit.spawn(spawnX, spawnY)
+        else
+            -- FALLBACK: If we couldn't find a wall-free spot in 20 tries,
+            -- spawn them further away as a safety measure.
+            -- (Ideally, you simply skip spawning this one enemy to avoid bugs)
+            print("Could not find valid spawn spot for enemy " .. i)
         end
     end
 end
@@ -537,8 +488,7 @@ function mouseDown(button)
     if button == leftMouseButton then 
         local arrowCooldown = player.arrowCooldown
         
-        if cooldown <= 0 then
-            local zoom = mainCharacter.zoom 
+        if cooldown <= 0 then 
             local camX = mainCharacter.camX
             local camY = mainCharacter.camY
             local x = love.mouse.getX()

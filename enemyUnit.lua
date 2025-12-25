@@ -6,17 +6,11 @@ local tntSpriteSheet
 local torchSpriteSheet
 
 local bossTime = 0
-local bossInterval = 50
+local bossInterval = 40
+local spawningBoss = false
 
 function enemyUnit.spawn(x, y)
     local e = {}
-
-    local spawningBoss = false
-
-    if bossTime >= bossInterval then 
-        spawningBoss = true
-        bossTime = 0
-    end
 
     e.collider = world:newRectangleCollider(x, y, 64, 64)
     e.collider:setFixedRotation(true)
@@ -31,6 +25,11 @@ function enemyUnit.spawn(x, y)
     local startingSpeed = 200
     local startingDamage = 20
     local startingXp = 100
+
+    if bossTime >= bossInterval then 
+        spawningBoss = true
+        bossTime = 0
+    end
     
     if not spawningBoss then
         e.health = startingHealth + timeBuff
@@ -50,6 +49,8 @@ function enemyUnit.spawn(x, y)
         e.isBoss = true
         e.attackTimer = 0
         e.attackInterval = 4
+        
+        spawningBoss = false
     end
     e.animations = {
         -- down  = anim8.newAnimation(e.grid("1-4", 1), 0.2),
@@ -75,6 +76,7 @@ function enemyUnit.load()
     enemySpriteSheet = love.graphics.newImage("sprites/player-sheet.png")
     tntSpriteSheet = love.graphics.newImage("sprites/enemy-tnt.png")
     torchSpriteSheet = love.graphics.newImage("sprites/enemy-torch.png")
+
     time = 0
 end
 
@@ -117,7 +119,6 @@ function enemyUnit.update(dt)
     bossTime = bossTime + dt
 
     for i, e in ipairs(enemyUnit.enemies) do
-        
         if e.isBoss then
             e.attackTimer = e.attackTimer + dt
             if e.attackTimer >= e.attackInterval then
